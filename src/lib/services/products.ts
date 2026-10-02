@@ -175,7 +175,7 @@ export async function saveProductToDb(
         image_url: img.image_url,
         alt_text: img.alt_text || productData.name,
         is_primary: img.is_primary ?? i === 0,
-        display_order: i,
+        sort_order: i,
       }));
 
       const { error: imgError } = await supabase.from('product_images').insert(imageInserts);
