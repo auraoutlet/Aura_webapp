@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Upload, Plus, Trash2, CheckCircle2, Image as ImageIcon, Star, Loader2 } from 'lucide-react';
 import { Button, Input, Textarea, Select } from '@/components/ui';
-import { mockCategories, mockProducts } from '@/lib/mock-data';
 import { slugify } from '@/lib/utils';
 import { Product, ProductVariant, ProductImage, Category } from '@/lib/types';
 import { getCategories } from '@/lib/services/categories';
@@ -17,7 +16,7 @@ export default function NewProduct() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Dynamic Categories from Supabase
-  const [categories, setCategories] = useState<Category[]>(mockCategories);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   // Form State
   const [name, setName] = useState('');
@@ -242,9 +241,6 @@ export default function NewProduct() {
       variants,
       images
     );
-
-    // Save to cache
-    mockProducts.unshift(newProduct);
 
     setIsSubmitting(false);
     setSuccessMessage(true);

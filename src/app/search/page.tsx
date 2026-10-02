@@ -1,17 +1,33 @@
 'use client';
 
-import { useState } from 'react';
-import { Search as SearchIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search as SearchIcon, Loader2 } from 'lucide-react';
 import { Container } from '@/components/ui';
 import { ProductGrid } from '@/components/product';
-import { mockProducts } from '@/lib/mock-data';
+import { getProducts } from '@/lib/services/products';
+import { Product } from '@/lib/types';
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      const data = await getProducts();
+      setProducts(data);
+      setLoading(false);
+    }
+    loadData();
+  }, []);
 
   const searchResults = query.trim() === '' 
     ? [] 
-    : mockProducts.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
+    : products.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
+
+  const popularProducts = products.filter(p => p.is_featured).slice(0, 4);
+  const displayPopular = popularProducts.length > 0 ? popularProducts : products.slice(0, 4);
 
   return (
     <div className="py-12 md:py-16">
@@ -31,7 +47,11 @@ export default function SearchPage() {
           </div>
         </div>
 
-        {query.trim() !== '' ? (
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="animate-spin text-black" size={32} />
+          </div>
+        ) : query.trim() !== '' ? (
           <div>
             <p className="text-gray mb-6 text-sm uppercase tracking-wider">{searchResults.length} Results for &ldquo;{query}&rdquo;</p>
             {searchResults.length > 0 ? (
@@ -46,7 +66,7 @@ export default function SearchPage() {
         ) : (
           <div>
             <h2 className="text-xl font-bold uppercase tracking-wider mb-6">Popular Right Now</h2>
-            <ProductGrid products={mockProducts.slice(0, 4)} />
+            <ProductGrid products={displayPopular} />
           </div>
         )}
       </Container>

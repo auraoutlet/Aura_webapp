@@ -1,22 +1,59 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { mockCustomers, mockOrders } from '@/lib/mock-data';
-import { formatPrice, getInitials } from '@/lib/utils';
+import React, { useState, useEffect, useMemo } from 'react';
+import { getInitials } from '@/lib/utils';
 import { Search } from 'lucide-react';
-import { Input, TablePagination } from '@/components/ui';
+import { Input, TablePagination, Spinner } from '@/components/ui';
+import { createClient } from '@/lib/supabase/client';
 
 export default function AdminCustomers() {
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    async function loadCustomers() {
+      try {
+        const supabase = createClient();
+
+        // 1. Fetch real profiles
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('role', 'customer')
+          .order('created_at', { ascending: false });
+
+        if (profilesData) {
+          setCustomers(profilesData);
+        }
+
+        // 2. Fetch orders to calculate totals
+        const { data: ordersData } = await supabase
+          .from('orders')
+          .select('id, user_id, total_amount');
+
+        if (ordersData) {
+          setOrders(ordersData);
+        }
+      } catch (err) {
+        console.error('Error loading customers:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadCustomers();
+  }, []);
 
   const filteredCustomers = useMemo(() => {
-    return mockCustomers.filter(c => 
-      c.full_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      (c.email ? c.email.toLowerCase().includes(searchTerm.toLowerCase()) : false)
+    return customers.filter(c => 
+      (c.full_name && c.full_name.toLowerCase().includes(searchTerm.toLowerCase())) || 
+      (c.phone && c.phone.includes(searchTerm))
     );
-  }, [searchTerm]);
+  }, [customers, searchTerm]);
 
   const paginatedCustomers = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -28,11 +65,19 @@ export default function AdminCustomers() {
     setCurrentPage(1);
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-[400px] flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight uppercase">Customers</h1>
-        <p className="text-gray-500 text-sm">Manage your store's customers.</p>
+        <h1 className="text-3xl font-black tracking-tight uppercase">Customers</h1>
+        <p className="text-gray-500 text-sm">View and manage registered customers.</p>
       </div>
 
       <div className="bg-white border border-gray-200">
@@ -42,7 +87,7 @@ export default function AdminCustomers() {
             <Input
               type="text"
               placeholder="Search customers..."
-              className="pl-9 h-10 rounded-none border-gray-300 w-full"
+              className="pl-9 h-10 rounded-none border-gray-300 w-full text-sm"
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
             />
@@ -56,31 +101,30 @@ export default function AdminCustomers() {
           <table className="w-full min-w-[700px] text-left text-sm whitespace-nowrap">
             <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 font-medium">Customer</th>
-                <th className="px-6 py-4 font-medium">Contact</th>
-                <th className="px-6 py-4 font-medium">Orders</th>
-                <th className="px-6 py-4 font-medium">Role</th>
-                <th className="px-6 py-4 font-medium">Joined</th>
+                <th className="px-6 py-4 font-bold">Customer</th>
+                <th className="px-6 py-4 font-bold">Contact</th>
+                <th className="px-6 py-4 font-bold">Orders Placed</th>
+                <th className="px-6 py-4 font-bold">Role</th>
+                <th className="px-6 py-4 font-bold">Joined</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {paginatedCustomers.map((customer) => {
-                const customerOrders = mockOrders.filter(o => o.user_id === customer.id);
-                const totalSpent = customerOrders.reduce((sum, o) => sum + o.total_amount, 0);
+                const customerOrders = orders.filter(o => o.user_id === customer.id);
 
                 return (
                   <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 bg-black text-white rounded-full flex items-center justify-center font-bold text-sm">
-                          {getInitials(customer.full_name)}
+                          {getInitials(customer.full_name || 'Customer')}
                         </div>
-                        <div className="font-bold text-black">{customer.full_name}</div>
+                        <div className="font-bold text-black">{customer.full_name || 'Valued Customer'}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-600">
-                      <div className="font-medium text-black">{customer.email || 'N/A'}</div>
-                      {customer.phone && <div className="text-xs text-gray-500">{customer.phone}</div>}
+                      <div className="font-medium text-black">{customer.phone || 'Phone on checkout'}</div>
+                      <div className="text-[11px] text-gray-400">ID: {customer.id.slice(0, 8)}...</div>
                     </td>
                     <td className="px-6 py-4 font-bold text-black">{customerOrders.length}</td>
                     <td className="px-6 py-4 font-bold uppercase text-xs">

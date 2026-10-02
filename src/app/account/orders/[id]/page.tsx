@@ -1,11 +1,11 @@
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { mockOrders, mockProducts } from '@/lib/mock-data';
 import { SectionHeading, Badge } from '@/components/ui';
 import { formatPrice } from '@/lib/utils';
 import { ChevronRight, Package, CheckCircle, Truck, Clock } from 'lucide-react';
 import { OrderStatus, PaymentStatus } from '@/lib/types';
+import { getOrderById } from '@/lib/services/orders';
 
 function getStatusVariant(status: OrderStatus | PaymentStatus) {
   switch (status) {
@@ -35,7 +35,7 @@ const timelineSteps = [
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
-  const order = mockOrders.find((o) => o.id === resolvedParams.id);
+  const order = await getOrderById(resolvedParams.id);
 
   if (!order) {
     notFound();
@@ -71,28 +71,22 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         </div>
       </div>
 
-      {/* Timeline */}
+      {/* Timeline (if not cancelled) */}
       {order.order_status !== 'CANCELLED' && (
-        <div className="py-6 overflow-x-auto">
-          <div className="min-w-[600px] flex items-center justify-between relative">
-            <div className="absolute top-1/2 left-0 w-full h-[2px] bg-gray/20 -z-10 -translate-y-1/2"></div>
-            <div 
-              className="absolute top-1/2 left-0 h-[2px] bg-black -z-10 -translate-y-1/2 transition-all duration-500"
-              style={{ width: `${currentStepIndex >= 0 ? (currentStepIndex / (timelineSteps.length - 1)) * 100 : 0}%` }}
-            ></div>
-            
-            {timelineSteps.map((step, index) => {
-              const isCompleted = currentStepIndex >= index;
-              const StepIcon = step.icon;
-              
+        <div className="py-4">
+          <div className="flex items-center justify-between relative">
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-0.5 bg-border -z-10" />
+            {timelineSteps.map((step, idx) => {
+              const Icon = step.icon;
+              const isPastOrCurrent = currentStepIndex >= idx;
               return (
                 <div key={step.status} className="flex flex-col items-center gap-2 bg-white px-2">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
-                    isCompleted ? 'bg-black border-black text-white' : 'bg-white border-border text-gray'
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                    isPastOrCurrent ? 'border-black bg-black text-white' : 'border-border bg-white text-gray'
                   }`}>
-                    <StepIcon size={20} />
+                    <Icon size={14} />
                   </div>
-                  <span className={`text-xs font-medium uppercase tracking-wider ${isCompleted ? 'text-black' : 'text-gray'}`}>
+                  <span className={`text-xs uppercase font-medium ${isPastOrCurrent ? 'text-black font-bold' : 'text-gray'}`}>
                     {step.label}
                   </span>
                 </div>
@@ -107,27 +101,22 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         <h3 className="font-bold uppercase tracking-wider text-sm border-b border-border pb-2">Items</h3>
         <div className="flex flex-col gap-6">
           {(order.items || []).map((item) => {
-            const product = mockProducts.find(p => p.id === item.product_id);
             return (
               <div key={item.id} className="flex gap-4 items-start">
-                <div className="w-20 h-24 bg-off-white flex-shrink-0 flex items-center justify-center">
-                  {product?.images?.[0]?.image_url ? (
-                    <img src={product.images[0].image_url} alt={product.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-[10px] uppercase font-bold text-gray">Item</span>
-                  )}
+                <div className="w-20 h-24 bg-off-white flex-shrink-0 flex items-center justify-center border border-border">
+                  <span className="text-[10px] uppercase font-bold text-gray">ITEM</span>
                 </div>
                 <div className="flex-1 flex flex-col gap-1">
-                  <Link href={`/products/${product?.slug || ''}`} className="font-medium hover:underline">
-                    {item.product_name || product?.name || 'Unknown Product'}
-                  </Link>
-                  <div className="text-sm text-gray flex gap-4">
-                    {item.color && <span>Color: {item.color}</span>}
-                    {item.size && <span>Size: {item.size}</span>}
+                  <div className="font-bold text-black">
+                    {item.product_name || 'AURA OUTLET Item'}
                   </div>
-                  <div className="text-sm">Qty: {item.quantity}</div>
+                  <div className="text-sm text-gray flex gap-4">
+                    {item.color && <span>Color: <strong className="text-black">{item.color}</strong></span>}
+                    {item.size && <span>Size: <strong className="text-black">{item.size}</strong></span>}
+                  </div>
+                  <div className="text-sm">Qty: <strong className="text-black">{item.quantity}</strong></div>
                 </div>
-                <div className="font-medium">
+                <div className="font-bold text-base text-black">
                   {formatPrice(item.total_price)}
                 </div>
               </div>
@@ -143,7 +132,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <h3 className="font-bold uppercase tracking-wider text-sm border-b border-border pb-2">Shipping Address</h3>
             {order.address ? (
               <div className="text-sm text-gray leading-relaxed">
-                <span className="font-medium text-black block mb-1">{order.address.full_name}</span>
+                <span className="font-bold text-black block mb-1">{order.address.full_name}</span>
                 {order.address.address_line_1}<br />
                 {order.address.address_line_2 && <>{order.address.address_line_2}<br /></>}
                 {order.address.city}, {order.address.state} - {order.address.pincode}<br />
@@ -151,40 +140,39 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 Phone: {order.address.phone}
               </div>
             ) : (
-              <p className="text-sm text-gray">No shipping address recorded</p>
+              <p className="text-sm text-gray">Delivery details recorded with order</p>
             )}
           </div>
           
           <div className="flex flex-col gap-4">
-            <h3 className="font-bold uppercase tracking-wider text-sm border-b border-border pb-2">Payment Status</h3>
-            <div className="text-sm text-gray">
-              {order.payment_status}
+            <h3 className="font-bold uppercase tracking-wider text-sm border-b border-border pb-2">Payment Details</h3>
+            <div className="text-sm text-gray space-y-1">
+              <p>Status: <span className="font-bold text-black">{order.payment_status}</span></p>
+              <p>Delivery: Standard Courier (3-5 business days)</p>
             </div>
           </div>
         </div>
 
-        {/* Summary */}
-        <div className="flex flex-col gap-4 bg-off-white p-6">
-          <h3 className="font-bold uppercase tracking-wider text-sm border-b border-border pb-2">Order Summary</h3>
-          <div className="flex flex-col gap-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray">Subtotal</span>
-              <span>{formatPrice(order.subtotal)}</span>
+        {/* Price Breakdown */}
+        <div className="bg-off-white p-6 border border-border flex flex-col gap-3">
+          <h3 className="font-bold uppercase tracking-wider text-sm border-b border-border pb-2 mb-2">Order Summary</h3>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray">Subtotal</span>
+            <span className="font-medium text-black">{formatPrice(order.subtotal)}</span>
+          </div>
+          {Number(order.discount) > 0 && (
+            <div className="flex justify-between text-sm text-success font-medium">
+              <span>Discount</span>
+              <span>-{formatPrice(order.discount)}</span>
             </div>
-            {order.discount > 0 && (
-              <div className="flex justify-between text-success">
-                <span>Discount</span>
-                <span>-{formatPrice(order.discount)}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-gray">Shipping</span>
-              <span>{order.shipping_fee === 0 ? 'FREE' : formatPrice(order.shipping_fee)}</span>
-            </div>
-            <div className="flex justify-between font-bold text-lg pt-4 border-t border-border">
-              <span>Total</span>
-              <span>{formatPrice(order.total_amount)}</span>
-            </div>
+          )}
+          <div className="flex justify-between text-sm">
+            <span className="text-gray">Shipping</span>
+            <span className="font-medium text-black">{Number(order.shipping_fee) === 0 ? 'FREE' : formatPrice(order.shipping_fee)}</span>
+          </div>
+          <div className="flex justify-between text-base font-bold border-t border-border pt-3 mt-1 text-black">
+            <span>Total</span>
+            <span>{formatPrice(order.total_amount)}</span>
           </div>
         </div>
       </div>

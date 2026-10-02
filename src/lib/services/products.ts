@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
 import { Product, ProductVariant, ProductImage } from '@/lib/types';
-import { mockProducts } from '@/lib/mock-data';
 
 export async function getProducts(options?: {
   categoryId?: string;
@@ -36,28 +35,14 @@ export async function getProducts(options?: {
 
     const { data, error } = await query;
 
-    if (error || !data || data.length === 0) {
-      // Fallback gracefully to mock data
-      let filtered = [...mockProducts];
-      if (options?.categoryId) {
-        filtered = filtered.filter(p => p.category_id === options.categoryId);
-      }
-      if (options?.isFeatured !== undefined) {
-        filtered = filtered.filter(p => p.is_featured === options.isFeatured);
-      }
-      if (options?.search) {
-        filtered = filtered.filter(p => p.name.toLowerCase().includes(options.search!.toLowerCase()));
-      }
-      if (options?.limit) {
-        filtered = filtered.slice(0, options.limit);
-      }
-      return filtered;
+    if (error || !data) {
+      return [];
     }
 
     return data as Product[];
   } catch (err) {
-    console.warn('Supabase getProducts error, using fallback:', err);
-    return mockProducts;
+    console.warn('Supabase getProducts error:', err);
+    return [];
   }
 }
 
@@ -74,14 +59,14 @@ export async function getAllAdminProducts(): Promise<Product[]> {
       `)
       .order('created_at', { ascending: false });
 
-    if (error || !data || data.length === 0) {
-      return mockProducts;
+    if (error || !data) {
+      return [];
     }
 
     return data as Product[];
   } catch (err) {
     console.warn('Supabase getAllAdminProducts error:', err);
-    return mockProducts;
+    return [];
   }
 }
 
@@ -100,13 +85,13 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
       .maybeSingle();
 
     if (error || !data) {
-      return mockProducts.find(p => p.slug === slug) || null;
+      return null;
     }
 
     return data as Product;
   } catch (err) {
     console.warn('Supabase getProductBySlug error:', err);
-    return mockProducts.find(p => p.slug === slug) || null;
+    return null;
   }
 }
 
@@ -125,13 +110,13 @@ export async function getProductById(id: string): Promise<Product | null> {
       .maybeSingle();
 
     if (error || !data) {
-      return mockProducts.find(p => p.id === id) || null;
+      return null;
     }
 
     return data as Product;
   } catch (err) {
     console.warn('Supabase getProductById error:', err);
-    return mockProducts.find(p => p.id === id) || null;
+    return null;
   }
 }
 
@@ -159,45 +144,48 @@ export async function saveProductToDb(
       updated_at: new Date().toISOString(),
     });
 
-    if (prodError) {
-      console.error('Error saving product:', prodError);
-      return { success: false, id: productId, error: prodError.message };
-    }
+    if (prodError) throw prodError;
 
-    // 2. Delete existing variants and re-insert
-    await supabase.from('product_variants').delete().eq('product_id', productId);
-    if (variants.length > 0) {
-      const variantRows = variants.map((v, i) => ({
-        id: `var-${productId}-${i}`,
+    // 2. Upsert variants
+    if (variants && variants.length > 0) {
+      await supabase.from('product_variants').delete().eq('product_id', productId);
+
+      const variantInserts = variants.map((v, i) => ({
+        id: `var-${productId}-${i + 1}`,
         product_id: productId,
         size: v.size,
         color: v.color,
-        sku: v.sku,
-        price: v.price,
-        stock_quantity: v.stock_quantity,
-        is_active: v.is_active,
+        sku: v.sku || `${productData.slug.toUpperCase()}-${v.size}-${v.color.toUpperCase()}`,
+        price: v.price || productData.sale_price || productData.base_price,
+        stock_quantity: v.stock_quantity ?? 10,
+        is_active: v.is_active ?? true,
       }));
-      await supabase.from('product_variants').insert(variantRows);
+
+      const { error: varError } = await supabase.from('product_variants').insert(variantInserts);
+      if (varError) throw varError;
     }
 
-    // 3. Delete existing images and re-insert
-    await supabase.from('product_images').delete().eq('product_id', productId);
-    if (images.length > 0) {
-      const imageRows = images.map((img, i) => ({
-        id: `img-${productId}-${i}`,
+    // 3. Upsert images
+    if (images && images.length > 0) {
+      await supabase.from('product_images').delete().eq('product_id', productId);
+
+      const imageInserts = images.map((img, i) => ({
+        id: `img-${productId}-${i + 1}`,
         product_id: productId,
         image_url: img.image_url,
         alt_text: img.alt_text || productData.name,
-        sort_order: i,
-        is_primary: img.is_primary,
+        is_primary: img.is_primary ?? i === 0,
+        display_order: i,
       }));
-      await supabase.from('product_images').insert(imageRows);
+
+      const { error: imgError } = await supabase.from('product_images').insert(imageInserts);
+      if (imgError) throw imgError;
     }
 
     return { success: true, id: productId };
   } catch (err: any) {
-    console.error('saveProductToDb failed:', err);
-    return { success: false, id: productData.id, error: err.message };
+    console.error('saveProductToDb error:', err);
+    return { success: false, id: '', error: err.message };
   }
 }
 
@@ -211,7 +199,7 @@ export async function deleteProductFromDb(id: string): Promise<boolean> {
     }
     return true;
   } catch (err) {
-    console.error('deleteProductFromDb exception:', err);
+    console.error('deleteProductFromDb error:', err);
     return false;
   }
 }

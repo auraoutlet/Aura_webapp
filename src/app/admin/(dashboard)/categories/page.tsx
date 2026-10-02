@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { mockCategories } from '@/lib/mock-data';
 import { Plus, Edit2, Trash2, X, CheckCircle2, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Button, Input, Textarea, TablePagination } from '@/components/ui';
 import { slugify } from '@/lib/utils';
@@ -9,7 +8,7 @@ import { Category } from '@/lib/types';
 import { getAllAdminCategories, saveCategoryToDb, deleteCategoryFromDb } from '@/lib/services/categories';
 
 export default function AdminCategories() {
-  const [categories, setCategories] = useState<Category[]>(mockCategories);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);

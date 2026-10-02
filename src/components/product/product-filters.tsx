@@ -1,12 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
-import { mockFilterOptions } from '@/lib/mock-data';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui';
 import { Filter, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getCategories } from '@/lib/services/categories';
+import { Category } from '@/lib/types';
+
+const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
 export interface ProductFiltersProps {
+  categories?: Category[];
   selectedCategories?: string[];
   onToggleCategory?: (id: string) => void;
   minPrice?: string;
@@ -26,6 +30,7 @@ interface FilterContentProps extends ProductFiltersProps {
 }
 
 function FilterContent({
+  categories = [],
   selectedCategories = [],
   onToggleCategory,
   minPrice = '',
@@ -52,22 +57,24 @@ function FilterContent({
       )}
 
       {/* Categories */}
-      <div>
-        <h3 className="font-black uppercase mb-3 text-xs md:text-sm tracking-[0.2em] text-black pb-1.5 border-b border-border">Categories</h3>
-        <div className="space-y-2.5 mt-3">
-          {mockFilterOptions.categories.map((cat) => (
-            <label key={cat.id} className="flex items-center gap-2.5 cursor-pointer hover:text-black transition-colors group">
-              <input 
-                type="checkbox" 
-                className="w-4 h-4 accent-black border-black cursor-pointer"
-                checked={selectedCategories.includes(cat.id)}
-                onChange={() => onToggleCategory?.(cat.id)}
-              />
-              <span className="text-sm md:text-base font-medium text-black/80 group-hover:text-black">{cat.name}</span>
-            </label>
-          ))}
+      {categories.length > 0 && (
+        <div>
+          <h3 className="font-black uppercase mb-3 text-xs md:text-sm tracking-[0.2em] text-black pb-1.5 border-b border-border">Categories</h3>
+          <div className="space-y-2.5 mt-3">
+            {categories.map((cat) => (
+              <label key={cat.id} className="flex items-center gap-2.5 cursor-pointer hover:text-black transition-colors group">
+                <input 
+                  type="checkbox" 
+                  className="w-4 h-4 accent-black border-black cursor-pointer"
+                  checked={selectedCategories.includes(cat.id)}
+                  onChange={() => onToggleCategory?.(cat.id)}
+                />
+                <span className="text-sm md:text-base font-medium text-black/80 group-hover:text-black">{cat.name}</span>
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Price */}
       <div>
@@ -95,7 +102,7 @@ function FilterContent({
       <div>
         <h3 className="font-black uppercase mb-3 text-xs md:text-sm tracking-[0.2em] text-black pb-1.5 border-b border-border">Size</h3>
         <div className="flex flex-wrap gap-2 mt-3">
-          {mockFilterOptions.sizes.map((size) => {
+          {SIZES.map((size) => {
             const isSelected = selectedSizes.includes(size);
             return (
               <button 
@@ -142,11 +149,22 @@ function FilterContent({
 
 export function ProductFilters(props: ProductFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>(props.categories || []);
   const [internalCategories, setInternalCategories] = useState<string[]>([]);
   const [internalMinPrice, setInternalMinPrice] = useState('');
   const [internalMaxPrice, setInternalMaxPrice] = useState('');
   const [internalSizes, setInternalSizes] = useState<string[]>([]);
   const [internalInStock, setInternalInStock] = useState(false);
+
+  useEffect(() => {
+    if (props.categories && props.categories.length > 0) {
+      setCategories(props.categories);
+    } else {
+      getCategories().then(data => {
+        if (data && data.length > 0) setCategories(data);
+      });
+    }
+  }, [props.categories]);
 
   const selectedCategories = props.selectedCategories !== undefined ? props.selectedCategories : internalCategories;
   const toggleCategory = props.onToggleCategory || ((id: string) => {
@@ -183,6 +201,7 @@ export function ProductFilters(props: ProductFiltersProps) {
   };
 
   const filterProps = {
+    categories,
     selectedCategories,
     onToggleCategory: toggleCategory,
     minPrice,

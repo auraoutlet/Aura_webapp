@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Printer, CheckCircle2 } from 'lucide-react';
 import { Button, Select } from '@/components/ui';
-import { mockOrders, mockProducts } from '@/lib/mock-data';
 import { formatPrice } from '@/lib/utils';
 import { Order, OrderStatus } from '@/lib/types';
 import { getOrderById, updateOrderStatusInDb } from '@/lib/services/orders';
@@ -44,10 +43,6 @@ export default function AdminOrderDetail({ params }: { params?: Promise<{ id: st
   if (!order) {
     return <div className="p-12 text-center text-gray">Loading order...</div>;
   }
-
-  const getProductInfo = (productId: string) => {
-    return mockProducts.find(p => p.id === productId);
-  };
 
   const handleUpdateStatus = async () => {
     if (!id) return;
@@ -114,27 +109,22 @@ export default function AdminOrderDetail({ params }: { params?: Promise<{ id: st
                 </thead>
                 <tbody className="divide-y divide-border">
                   {(order.items || []).map((item, idx) => {
-                    const product = getProductInfo(item.product_id);
                     return (
                       <tr key={idx}>
                         <td className="py-4">
                           <div className="flex gap-3">
                             <div className="h-12 w-12 bg-off-white flex-shrink-0 flex items-center justify-center border border-gray-200">
-                              {product?.images?.[0]?.image_url ? (
-                                <img src={product.images[0].image_url} alt="" className="h-full w-full object-cover" />
-                              ) : (
-                                <span className="text-[9px] uppercase tracking-wider text-gray">Item</span>
-                              )}
+                              <span className="text-[9px] uppercase tracking-wider font-bold text-gray-400">ITEM</span>
                             </div>
                             <div>
-                              <p className="font-bold">{item.product_name || product?.name || item.product_id}</p>
-                              <p className="text-xs text-gray">Size: {item.size} | Color: {item.color}</p>
-                              <p className="text-xs text-gray">{formatPrice(item.unit_price)}</p>
+                              <p className="font-bold text-black">{item.product_name || 'AURA OUTLET Item'}</p>
+                              <p className="text-xs text-gray-500">Size: {item.size} | Color: {item.color}</p>
+                              <p className="text-xs text-gray-500">{formatPrice(item.unit_price)}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="py-4 text-center font-medium">{item.quantity}</td>
-                        <td className="py-4 text-right font-bold">{formatPrice(item.total_price)}</td>
+                        <td className="py-4 text-center font-bold text-black">{item.quantity}</td>
+                        <td className="py-4 text-right font-bold text-black">{formatPrice(item.total_price)}</td>
                       </tr>
                     );
                   })}

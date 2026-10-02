@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { mockCoupons } from '@/lib/mock-data';
 import { Plus, Edit2, Trash2, X, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button, Input, TablePagination, Select } from '@/components/ui';
 import { Coupon } from '@/lib/types';
 import { getAllCoupons, saveCouponToDb, deleteCouponFromDb } from '@/lib/services/coupons';
 
 export default function AdminCoupons() {
-  const [coupons, setCoupons] = useState<Coupon[]>(mockCoupons);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);

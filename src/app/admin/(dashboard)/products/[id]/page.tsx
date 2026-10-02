@@ -5,7 +5,6 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Upload, Plus, Trash2, CheckCircle2, Image as ImageIcon, Star, Loader2 } from 'lucide-react';
 import { Button, Input, Textarea, Select } from '@/components/ui';
-import { mockProducts, mockCategories } from '@/lib/mock-data';
 import { slugify } from '@/lib/utils';
 import { Product, ProductVariant, ProductImage, Category } from '@/lib/types';
 import { getProductById, saveProductToDb, deleteProductFromDb } from '@/lib/services/products';
@@ -17,7 +16,7 @@ export default function EditProduct({ params }: { params?: Promise<{ id: string 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Dynamic Categories from Supabase
-  const [categories, setCategories] = useState<Category[]>(mockCategories);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   // Next.js 16 param unwrapping
   const unwrappedParams = params ? React.use(params) : null;
@@ -289,14 +288,6 @@ export default function EditProduct({ params }: { params?: Promise<{ id: string 
       images
     );
 
-    // Update in mock store
-    const index = mockProducts.findIndex(p => p.id === id);
-    if (index !== -1) {
-      mockProducts[index] = updatedProduct;
-    } else {
-      mockProducts.unshift(updatedProduct);
-    }
-
     setIsSubmitting(false);
     setSuccessMessage(true);
     setTimeout(() => {
@@ -309,10 +300,6 @@ export default function EditProduct({ params }: { params?: Promise<{ id: string 
     if (confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
       if (id) {
         await deleteProductFromDb(id);
-      }
-      const index = mockProducts.findIndex(p => p.id === id);
-      if (index !== -1) {
-        mockProducts.splice(index, 1);
       }
       router.push('/admin/products');
     }

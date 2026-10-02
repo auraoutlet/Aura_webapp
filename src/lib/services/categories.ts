@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
 import { Category } from '@/lib/types';
-import { mockCategories } from '@/lib/mock-data';
 
 export async function getCategories(): Promise<Category[]> {
   try {
@@ -11,14 +10,14 @@ export async function getCategories(): Promise<Category[]> {
       .eq('is_active', true)
       .order('name');
 
-    if (error || !data || data.length === 0) {
-      return mockCategories;
+    if (error || !data) {
+      return [];
     }
 
     return data as Category[];
   } catch (err) {
-    console.warn('Supabase getCategories error, using fallback:', err);
-    return mockCategories;
+    console.warn('Supabase getCategories error:', err);
+    return [];
   }
 }
 
@@ -30,14 +29,14 @@ export async function getAllAdminCategories(): Promise<Category[]> {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error || !data || data.length === 0) {
-      return mockCategories;
+    if (error || !data) {
+      return [];
     }
 
     return data as Category[];
   } catch (err) {
     console.warn('Supabase getAllAdminCategories error:', err);
-    return mockCategories;
+    return [];
   }
 }
 
@@ -73,7 +72,11 @@ export async function saveCategoryToDb(category: Partial<Category>): Promise<{ s
 export async function deleteCategoryFromDb(id: string): Promise<boolean> {
   try {
     const supabase = createClient();
-    const { error } = await supabase.from('categories').delete().eq('id', id);
+    const { error } = await supabase
+      .from('categories')
+      .delete()
+      .eq('id', id);
+
     if (error) {
       console.error('deleteCategoryFromDb error:', error);
       return false;

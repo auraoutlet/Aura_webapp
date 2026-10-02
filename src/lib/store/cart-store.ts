@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { CartItem, Product, ProductVariant } from '@/lib/types';
-import { mockCartItems } from '@/lib/mock-data';
 
 interface CartState {
   items: CartItem[];
@@ -18,7 +17,7 @@ interface CartState {
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
-      items: mockCartItems,
+      items: [],
       addItem: (product: Product, variant: ProductVariant, quantity = 1) => {
         set((state) => {
           const existingItem = state.items.find(
@@ -37,7 +36,7 @@ export const useCartStore = create<CartState>()(
 
           const newItem: CartItem = {
             id: Math.random().toString(36).substring(2, 9),
-            cart_id: 'mock_cart_id',
+            cart_id: 'local_cart',
             product_id: product.id,
             variant_id: variant.id,
             quantity,

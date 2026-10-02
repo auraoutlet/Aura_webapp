@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
 import { Coupon } from '@/lib/types';
-import { mockCoupons } from '@/lib/mock-data';
 
 export async function getAllCoupons(): Promise<Coupon[]> {
   try {
@@ -10,14 +9,14 @@ export async function getAllCoupons(): Promise<Coupon[]> {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error || !data || data.length === 0) {
-      return mockCoupons;
+    if (error || !data) {
+      return [];
     }
 
     return data as Coupon[];
   } catch (err) {
-    console.warn('Supabase getAllCoupons error, using fallback:', err);
-    return mockCoupons;
+    console.warn('Supabase getAllCoupons error:', err);
+    return [];
   }
 }
 
@@ -32,14 +31,13 @@ export async function getActiveCouponByCode(code: string): Promise<Coupon | null
       .maybeSingle();
 
     if (error || !data) {
-      const found = mockCoupons.find(c => c.code.toUpperCase() === code.toUpperCase() && c.is_active);
-      return found || null;
+      return null;
     }
 
     return data as Coupon;
   } catch (err) {
     console.warn('Supabase getActiveCouponByCode error:', err);
-    return mockCoupons.find(c => c.code.toUpperCase() === code.toUpperCase()) || null;
+    return null;
   }
 }
 
