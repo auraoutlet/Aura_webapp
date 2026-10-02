@@ -15,5 +15,11 @@
   },
   "observability": {
     "enabled": true
+  },
+  "vars": {
+    "DATABASE_URL": "postgresql://postgres:Auraoutlet%402026@db.brfdzzkayfyivugydzen.supabase.co:5432/postgres",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJyZmR6emtheWZ5aXZ1Z3lkemVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MDI4MTAsImV4cCI6MjEwNjQ3ODgxMH0.fdnHSKlDKQ9rnkaLbZOFG_e5NLGMnL2wCwF5EZ2BmJA",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://brfdzzkayfyivugydzen.supabase.co"
   }
+
 }
