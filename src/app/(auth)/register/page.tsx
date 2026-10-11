@@ -132,7 +132,6 @@ function RegisterForm() {
           window.location.href = redirectTarget;
         }, 500);
       } else {
-        // Redirect to login page if email confirmation is enforced
         setTimeout(() => {
           window.location.href = `/login?registered=true&redirect=${encodeURIComponent(redirectTarget)}`;
         }, 700);
