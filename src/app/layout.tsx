@@ -19,21 +19,29 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — Premium Streetwear & Fashion`,
+    default: SITE_NAME,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
+  icons: {
+    icon: [
+      { url: '/icon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: '/icon.png',
+    apple: '/icon.png',
+  },
   openGraph: {
     type: 'website',
     locale: 'en_IN',
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: `${SITE_NAME} — Premium Streetwear & Fashion`,
+    title: SITE_NAME,
     description: SITE_DESCRIPTION,
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${SITE_NAME} — Premium Streetwear & Fashion`,
+    title: SITE_NAME,
     description: SITE_DESCRIPTION,
   },
   robots: {
