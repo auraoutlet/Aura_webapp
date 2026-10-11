@@ -81,7 +81,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
         images:product_images(*),
         variants:product_variants(*)
       `)
-      .eq('slug', slug)
+      .or(`slug.eq.${slug},id.eq.${slug}`)
       .maybeSingle();
 
     if (error || !data) {

@@ -35,6 +35,7 @@ import {
   CustomerReview
 } from '@/lib/services/settings';
 import { uploadImageToStorage } from '@/lib/services/storage';
+import { getAllSubmittedReviews, ProductReview } from '@/lib/services/reviews';
 
 export default function AdminSettings() {
   const [loading, setLoading] = useState(true);
@@ -90,6 +91,8 @@ export default function AdminSettings() {
   const [instaHandle, setInstaHandle] = useState(DEFAULT_COMMUNITY.instagramHandle);
   const [instaUrl, setInstaUrl] = useState(DEFAULT_COMMUNITY.instagramUrl);
   const [reviews, setReviews] = useState<CustomerReview[]>(DEFAULT_COMMUNITY.reviews);
+  const [submittedReviews, setSubmittedReviews] = useState<ProductReview[]>([]);
+  const [loadingSubmittedReviews, setLoadingSubmittedReviews] = useState(false);
 
   // New review form
   const [newRevName, setNewRevName] = useState('');
@@ -119,6 +122,7 @@ export default function AdminSettings() {
         commData,
         annData,
         storeData,
+        allCustReviews,
       ] = await Promise.all([
         getSetting<HeroBannerSettings>('hero_banner', DEFAULT_HERO_BANNER),
         getSetting<HomePageSectionsSettings>('homepage_sections', DEFAULT_HOMEPAGE_SECTIONS),
@@ -127,7 +131,12 @@ export default function AdminSettings() {
         getSetting<CommunitySectionSettings>('community_reviews', DEFAULT_COMMUNITY),
         getSetting<AnnouncementBarSettings>('announcement_bar', DEFAULT_ANNOUNCEMENT_BAR),
         getSetting<any>('store_info', null),
+        getAllSubmittedReviews(),
       ]);
+
+      if (allCustReviews) {
+        setSubmittedReviews(allCustReviews);
+      }
 
       if (heroData) {
         setHeroBadge(heroData.badge || DEFAULT_HERO_BANNER.badge);
@@ -247,6 +256,25 @@ export default function AdminSettings() {
 
   const handleRemoveReview = (id: string | number) => {
     setReviews(reviews.filter((r) => r.id !== id));
+  };
+
+  const handleToggleFeatureCustomerReview = (item: ProductReview) => {
+    const isAlreadyFeatured = reviews.some((r) => String(r.id) === String(item.id));
+    if (isAlreadyFeatured) {
+      setReviews(reviews.filter((r) => String(r.id) !== String(item.id)));
+    } else {
+      const newFeatured: CustomerReview = {
+        id: item.id,
+        name: item.name,
+        city: item.city || 'India',
+        rating: item.rating,
+        item: item.product_name ? `${item.product_name} • Heavyweight` : 'Heavyweight Streetwear',
+        review: item.comment,
+        verified: true,
+        fit: item.fit,
+      };
+      setReviews([newFeatured, ...reviews]);
+    }
   };
 
   const handleSaveAll = async (e: React.FormEvent) => {
@@ -775,53 +803,89 @@ export default function AdminSettings() {
                 ))}
               </div>
 
-              {/* Add New Review Box */}
-              <div className="mt-3 p-3 border border-black bg-white space-y-2.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-black block">Add Customer Review</span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <Input 
-                    value={newRevName} 
-                    onChange={(e) => setNewRevName(e.target.value)} 
-                    placeholder="Customer Name"
-                    className="h-8 text-xs" 
-                  />
-                  <Input 
-                    value={newRevCity} 
-                    onChange={(e) => setNewRevCity(e.target.value)} 
-                    placeholder="City" 
-                    className="h-8 text-xs" 
-                  />
-                  <Input 
-                    type="number"
-                    min="1"
-                    max="5"
-                    value={newRevRating} 
-                    onChange={(e) => setNewRevRating(e.target.value)} 
-                    placeholder="Rating (1-5)" 
-                    className="h-8 text-xs" 
-                  />
-                  <Input 
-                    value={newRevFit} 
-                    onChange={(e) => setNewRevFit(e.target.value)} 
-                    placeholder="Fit tag (e.g. True to oversized)" 
-                    className="h-8 text-xs" 
-                  />
+              {/* Customer-Submitted Product Reviews (from orders & product pages) */}
+              <div className="mt-4 pt-4 border-t-2 border-black space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-black flex items-center gap-1.5">
+                      <Star size={13} className="fill-black text-black" />
+                      Customer-Submitted Reviews ({submittedReviews.length})
+                    </h4>
+                    <p className="text-[11px] text-gray">
+                      Reviews submitted by verified customers on order confirmation or product pages. Click to feature on Homepage.
+                    </p>
+                  </div>
                 </div>
-                <Textarea 
-                  value={newRevReview} 
-                  onChange={(e) => setNewRevReview(e.target.value)} 
-                  placeholder="Review quote text..." 
-                  rows={2} 
-                  className="text-xs"
-                />
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={handleAddReview}
-                  className="text-xs font-bold uppercase h-9 px-4"
-                >
-                  <Plus size={13} className="mr-1" /> Add Review to Storefront
-                </Button>
+
+                {submittedReviews.length === 0 ? (
+                  <p className="text-xs text-gray italic bg-off-white p-3 border border-border">
+                    No customer reviews submitted yet. When customers submit reviews on the order receipt or product page, they will show up here.
+                  </p>
+                ) : (
+                  <div className="space-y-2 max-h-80 overflow-y-auto">
+                    {submittedReviews.map((item) => {
+                      const isFeatured = reviews.some((r) => String(r.id) === String(item.id));
+                      return (
+                        <div 
+                          key={item.id} 
+                          className={`p-3 border text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                            isFeatured ? 'bg-black text-white border-black' : 'bg-off-white text-black border-border'
+                          }`}
+                        >
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold">{item.name}</span>
+                              <span className={`text-[10px] ${isFeatured ? 'text-gray-300' : 'text-gray'}`}>
+                                ({item.city || 'India'})
+                              </span>
+                              <div className="flex">
+                                {[...Array(item.rating)].map((_, i) => (
+                                  <Star 
+                                    key={i} 
+                                    size={11} 
+                                    className={isFeatured ? 'fill-yellow-400 text-yellow-400' : 'fill-black text-black'} 
+                                  />
+                                ))}
+                              </div>
+                              {item.product_name && (
+                                <span className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 font-bold ${
+                                  isFeatured ? 'bg-white/20 text-white' : 'bg-black/10 text-black'
+                                }`}>
+                                  {item.product_name}
+                                </span>
+                              )}
+                            </div>
+                            <p className={`text-[11px] italic ${isFeatured ? 'text-gray-200' : 'text-gray-700'}`}>
+                              &ldquo;{item.comment}&rdquo;
+                            </p>
+                            <div className="flex items-center gap-2 text-[10px]">
+                              <span className={`px-1.5 py-0.5 border ${
+                                isFeatured ? 'border-white/30 text-white' : 'border-border bg-white text-black'
+                              }`}>
+                                Fit: {item.fit}
+                              </span>
+                              <span className={isFeatured ? 'text-gray-400' : 'text-gray'}>
+                                {new Date(item.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleToggleFeatureCustomerReview(item)}
+                            className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0 border ${
+                              isFeatured
+                                ? 'bg-white text-black border-white hover:bg-gray-200'
+                                : 'bg-black text-white border-black hover:bg-gray-800'
+                            }`}
+                          >
+                            {isFeatured ? '✓ Featured on Home' : '+ Feature on Home'}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>

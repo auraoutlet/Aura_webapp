@@ -62,7 +62,7 @@ export async function getOrderById(id: string): Promise<Order | null> {
       .select(`
         *,
         address:addresses(*),
-        items:order_items(*),
+        items:order_items(*, product:products(*)),
         payment:payments(*)
       `);
 

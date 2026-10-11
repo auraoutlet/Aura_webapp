@@ -54,13 +54,29 @@ export function ProductReviewsSection({ productId, productName }: ProductReviews
     autofillUser();
   }, []);
 
+  const [formError, setFormError] = useState('');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!comment.trim()) return;
+    setFormError('');
+
+    if (!rating) {
+      setFormError('Please select a star rating (1 to 5 stars)');
+      return;
+    }
+    if (!name.trim()) {
+      setFormError('Please enter your name');
+      return;
+    }
+    if (!comment.trim()) {
+      setFormError('Please write your review feedback');
+      return;
+    }
 
     setSubmitting(true);
     const res = await submitProductReview(productId, {
-      name: name.trim() || 'Verified Customer',
+      productName,
+      name: name.trim(),
       city: city.trim() || 'India',
       rating,
       fit,
@@ -79,6 +95,8 @@ export function ProductReviewsSection({ productId, productName }: ProductReviews
         setTitle('');
         setComment('');
       }, 2000);
+    } else {
+      setFormError(res.error || 'Failed to submit review');
     }
   };
 
@@ -232,10 +250,15 @@ export function ProductReviewsSection({ productId, productName }: ProductReviews
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
+                {formError && (
+                  <div className="p-2.5 bg-red-50 border border-red-300 text-red-700 text-xs font-bold uppercase tracking-wide">
+                    {formError}
+                  </div>
+                )}
                 {/* Star Rating Picker */}
                 <div>
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-black block mb-1.5">
-                    Your Rating: {rating} / 5 Stars
+                  <label className="text-xs font-black uppercase tracking-wider text-black block mb-1.5">
+                    Your Rating: {rating} / 5 Stars <span className="text-red-600">*</span>
                   </label>
                   <div className="flex gap-1.5">
                     {[1, 2, 3, 4, 5].map((star) => (

@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { SectionHeading, Badge } from '@/components/ui';
+import { OrderItemReviewModal } from '@/components/product';
 import { formatPrice } from '@/lib/utils';
 import { ChevronRight, Package, CheckCircle, Truck, Clock } from 'lucide-react';
 import { OrderStatus, PaymentStatus } from '@/lib/types';
@@ -115,16 +116,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     {item.size && <span>Size: <strong className="text-black">{item.size}</strong></span>}
                   </div>
                   <div className="text-sm">Qty: <strong className="text-black">{item.quantity}</strong></div>
-                  {item.product_id && (
-                    <div className="pt-1">
-                      <Link 
-                        href={`/products/${item.product?.slug || item.product_id}#reviews`}
-                        className="text-[11px] font-bold text-black uppercase tracking-wider underline hover:opacity-70 inline-block"
-                      >
-                        Rate & Review Item &rarr;
-                      </Link>
-                    </div>
-                  )}
+                  <div className="pt-2">
+                    <OrderItemReviewModal 
+                      productId={item.product?.slug || item.product_id || item.id}
+                      productName={item.product_name || 'Aura Apparel'}
+                      defaultCustomerName={order.address?.full_name || ''}
+                    />
+                  </div>
                 </div>
                 <div className="font-bold text-base text-black">
                   {formatPrice(item.total_price)}
