@@ -101,7 +101,7 @@ export default function OrdersPage() {
                 </div>
 
                 <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                  <Link href={`/order-confirmation/${order.id}`}>
+                  <Link href={`/account/orders/${order.id}`}>
                     <Button variant="outline" size="sm" className="gap-2">
                       <span>View Details</span>
                       <ExternalLink size={14} />

@@ -148,6 +148,23 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <h3 className="font-bold uppercase tracking-wider text-sm border-b border-border pb-2">Payment Details</h3>
             <div className="text-sm text-gray space-y-1">
               <p>Status: <span className="font-bold text-black">{order.payment_status}</span></p>
+              {(() => {
+                const payObj: any = Array.isArray(order.payment) ? order.payment[0] : order.payment;
+                if (!payObj) return null;
+                return (
+                  <>
+                    {payObj.payment_method && (
+                      <p>Method: <span className="font-semibold text-black">{payObj.payment_method}</span></p>
+                    )}
+                    {payObj.transaction_id && (
+                      <p>Transaction ID: <span className="font-mono text-xs text-black font-semibold">{payObj.transaction_id}</span></p>
+                    )}
+                    {payObj.cashfree_order_id && (
+                      <p>Cashfree Order: <span className="font-mono text-xs text-black">{payObj.cashfree_order_id}</span></p>
+                    )}
+                  </>
+                );
+              })()}
               <p>Delivery: Standard Courier (3-5 business days)</p>
             </div>
           </div>

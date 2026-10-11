@@ -58,14 +58,19 @@ function OrderSuccessContent() {
         </div>
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link href="/account/orders" className="w-full sm:w-auto">
+          <Link href={`/orders?number=${encodeURIComponent(orderNumber)}`} className="w-full sm:w-auto">
             <Button size="lg" className="w-full sm:w-auto px-6 h-11 font-black tracking-widest text-xs uppercase">
-              View My Orders
+              Track This Order
+            </Button>
+          </Link>
+          <Link href="/account/orders" className="w-full sm:w-auto">
+            <Button variant="outline" size="lg" className="w-full sm:w-auto px-6 h-11 font-black tracking-widest text-xs uppercase">
+              View All Orders
             </Button>
           </Link>
           <Link href="/shop" className="w-full sm:w-auto">
-            <Button variant="outline" size="lg" className="w-full sm:w-auto px-6 h-11 font-black tracking-widest text-xs uppercase flex items-center justify-center gap-1.5">
-              Continue Shopping <ArrowRight className="w-3.5 h-3.5" />
+            <Button variant="ghost" size="lg" className="w-full sm:w-auto px-5 h-11 font-black tracking-widest text-xs uppercase flex items-center justify-center gap-1.5">
+              Shop More <ArrowRight className="w-3.5 h-3.5" />
             </Button>
           </Link>
         </div>

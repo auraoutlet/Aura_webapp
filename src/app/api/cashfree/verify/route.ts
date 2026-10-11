@@ -52,11 +52,46 @@ export async function POST(request: Request) {
     let status = 'PENDING';
     if (data.order_status === 'PAID') {
       status = 'SUCCESS';
-      // Confirm the order in the database immediately!
+
+      // Fetch payment attempt details to extract exact cf_payment_id (transaction_id) and payment method
+      let transactionId = '';
+      let paymentMethod = 'Cashfree Online';
+      try {
+        const payListRes = await fetch(`${baseUrl}/orders/${orderId}/payments`, {
+          method: 'GET',
+          headers: {
+            'x-client-id': appId,
+            'x-client-secret': secretKey,
+            'x-api-version': '2023-08-01',
+            'Accept': 'application/json',
+          },
+        });
+        if (payListRes.ok) {
+          const payList = await payListRes.json();
+          if (Array.isArray(payList) && payList.length > 0) {
+            const successfulPay = payList.find((p: any) => p.payment_status === 'SUCCESS') || payList[0];
+            transactionId = String(successfulPay.cf_payment_id || '');
+            if (successfulPay.payment_group) {
+              paymentMethod = successfulPay.payment_group.toUpperCase();
+            } else if (successfulPay.payment_method) {
+              const methodKey = Object.keys(successfulPay.payment_method)[0];
+              paymentMethod = methodKey ? methodKey.toUpperCase() : 'Cashfree Online';
+            }
+          }
+        }
+      } catch (payListErr) {
+        console.warn('Could not fetch payment list from Cashfree:', payListErr);
+      }
+
+      // Confirm the order in the database with complete Cashfree details!
       await confirmOrderPayment(orderId, {
-        paymentId: data.cf_payment_id || `cf_${orderId}`,
+        cashfreeOrderId: String(data.cf_order_id || ''),
+        paymentSessionId: String(data.payment_session_id || ''),
+        transactionId: transactionId || String(data.cf_order_id || ''),
         amount: data.order_amount,
-        method: data.payment_method || 'Cashfree Online',
+        method: paymentMethod,
+        status: 'SUCCESS',
+        rawResponse: data,
       });
     } else if (data.order_status === 'FAILED') {
       status = 'FAILED';

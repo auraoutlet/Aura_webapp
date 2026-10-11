@@ -215,14 +215,61 @@ export async function updateOrderStatusInDb(id: string, status: OrderStatus): Pr
   }
 }
 
+export interface ConfirmPaymentDetails {
+  paymentId?: string;
+  method?: string;
+  amount?: number;
+  cashfreeOrderId?: string;
+  paymentSessionId?: string;
+  transactionId?: string;
+  status?: string;
+  rawResponse?: any;
+}
+
+export async function recordPaymentSession(
+  orderId: string,
+  sessionDetails: {
+    cashfreeOrderId: string;
+    paymentSessionId: string;
+    amount: number;
+    rawResponse?: any;
+  }
+): Promise<boolean> {
+  try {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('payments')
+      .upsert({
+        id: `pay_${orderId}`,
+        order_id: orderId,
+        cashfree_order_id: String(sessionDetails.cashfreeOrderId),
+        payment_session_id: sessionDetails.paymentSessionId,
+        amount: Number(sessionDetails.amount).toFixed(2),
+        status: 'PENDING',
+        payment_method: 'Cashfree Online',
+        raw_response: sessionDetails.rawResponse || null,
+        updated_at: new Date().toISOString(),
+      });
+
+    if (error) {
+      console.error('Error recording payment session in DB:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('recordPaymentSession error:', err);
+    return false;
+  }
+}
+
 export async function confirmOrderPayment(
   orderId: string, 
-  paymentDetails?: { paymentId?: string; method?: string; amount?: number }
+  paymentDetails?: ConfirmPaymentDetails
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = createClient();
 
-    // 1. Update order status and payment status
+    // 1. Update order status and payment status in orders table
     const { error: orderError } = await supabase
       .from('orders')
       .update({
@@ -237,21 +284,32 @@ export async function confirmOrderPayment(
       return { success: false, error: orderError.message };
     }
 
-    // 2. Insert or update payment record
-    const payId = paymentDetails?.paymentId || `pay_${orderId}`;
+    // 2. Find existing payment row for this order to prevent duplicate rows
+    const { data: existingPayment } = await supabase
+      .from('payments')
+      .select('id, cashfree_order_id, payment_session_id, transaction_id, raw_response')
+      .eq('order_id', orderId)
+      .maybeSingle();
+
+    const payId = existingPayment?.id || `pay_${orderId}`;
+
     const { error: payError } = await supabase
       .from('payments')
       .upsert({
         id: payId,
         order_id: orderId,
-        amount: paymentDetails?.amount ? paymentDetails.amount.toFixed(2) : undefined,
-        status: 'SUCCESS',
+        cashfree_order_id: paymentDetails?.cashfreeOrderId ? String(paymentDetails.cashfreeOrderId) : (existingPayment?.cashfree_order_id || null),
+        payment_session_id: paymentDetails?.paymentSessionId || existingPayment?.payment_session_id || null,
+        transaction_id: paymentDetails?.transactionId ? String(paymentDetails.transactionId) : (existingPayment?.transaction_id || null),
+        amount: paymentDetails?.amount ? Number(paymentDetails.amount).toFixed(2) : undefined,
+        status: (paymentDetails?.status || 'SUCCESS').toUpperCase(),
         payment_method: paymentDetails?.method || 'Cashfree Online',
+        raw_response: paymentDetails?.rawResponse || existingPayment?.raw_response || null,
         updated_at: new Date().toISOString(),
       });
 
     if (payError) {
-      console.error('Error upserting payment row:', payError);
+      console.error('Error upserting payment row in DB:', payError);
     }
 
     return { success: true };

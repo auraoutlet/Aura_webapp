@@ -42,17 +42,20 @@ export async function POST(req: NextRequest) {
     }
 
     if (eventType === 'PAYMENT_SUCCESS_WEBHOOK' || paymentData?.payment_status === 'SUCCESS') {
-      const paymentId = paymentData?.cf_payment_id || `cf_${orderId}`;
       const amount = paymentData?.payment_amount || orderData?.order_amount;
       const method = paymentData?.payment_group || 'Cashfree Online';
 
       await confirmOrderPayment(orderId, {
-        paymentId,
+        cashfreeOrderId: String(orderData?.cf_order_id || ''),
+        paymentSessionId: String(orderData?.payment_session_id || ''),
+        transactionId: String(paymentData?.cf_payment_id || ''),
         amount: typeof amount === 'number' ? amount : parseFloat(amount),
         method,
+        status: 'SUCCESS',
+        rawResponse: payload,
       });
 
-      console.log(`Order ${orderId} successfully confirmed via Cashfree webhook`);
+      console.log(`Order ${orderId} successfully confirmed via Cashfree webhook with transaction ${paymentData?.cf_payment_id}`);
     } else if (eventType === 'PAYMENT_FAILED_WEBHOOK' || paymentData?.payment_status === 'FAILED') {
       await markOrderFailed(orderId, paymentData?.payment_message || 'Payment marked failed by Cashfree');
       console.log(`Order ${orderId} marked failed via Cashfree webhook`);

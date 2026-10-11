@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { recordPaymentSession } from '@/lib/services/orders';
 
 export async function POST(request: Request) {
   try {
@@ -66,6 +67,14 @@ export async function POST(request: Request) {
         { status: response.status }
       );
     }
+
+    // Immediately record payment session in Supabase with cashfree_order_id and payment_session_id!
+    await recordPaymentSession(orderId, {
+      cashfreeOrderId: String(data.cf_order_id || ''),
+      paymentSessionId: String(data.payment_session_id || ''),
+      amount: payload.order_amount,
+      rawResponse: data,
+    });
 
     return NextResponse.json({
       payment_session_id: data.payment_session_id,
