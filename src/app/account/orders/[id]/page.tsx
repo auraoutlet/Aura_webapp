@@ -115,6 +115,16 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     {item.size && <span>Size: <strong className="text-black">{item.size}</strong></span>}
                   </div>
                   <div className="text-sm">Qty: <strong className="text-black">{item.quantity}</strong></div>
+                  {item.product_id && (
+                    <div className="pt-1">
+                      <Link 
+                        href={`/products/${item.product?.slug || item.product_id}#reviews`}
+                        className="text-[11px] font-bold text-black uppercase tracking-wider underline hover:opacity-70 inline-block"
+                      >
+                        Rate & Review Item &rarr;
+                      </Link>
+                    </div>
+                  )}
                 </div>
                 <div className="font-bold text-base text-black">
                   {formatPrice(item.total_price)}

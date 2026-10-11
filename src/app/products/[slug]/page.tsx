@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Container } from '@/components/ui';
-import { ProductGrid } from '@/components/product';
+import { ProductGrid, ProductReviewsSection } from '@/components/product';
 import { getProductBySlug, getProducts } from '@/lib/services/products';
 import { ProductDetailClient } from './product-detail-client';
 
@@ -54,8 +54,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </div>
 
         {/* Product Details Section */}
-        <div className="mb-8 md:mb-12">
+        <div className="mb-6 md:mb-8">
           <ProductDetailClient product={product} />
+        </div>
+
+        {/* Customer Reviews Section */}
+        <div className="mb-10 md:mb-14">
+          <ProductReviewsSection productId={product.id} productName={product.name} />
         </div>
 
         {/* Related Products */}

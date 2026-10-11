@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, Minus, Plus, ChevronDown, Check, Ruler, X } from 'lucide-react';
+import { Heart, Minus, Plus, ChevronDown, Check, Ruler, X, Star } from 'lucide-react';
 import { Product } from '@/lib/types';
 import { formatPrice, calculateDiscountPercentage, cn } from '@/lib/utils';
 import { Button, Badge } from '@/components/ui';
@@ -136,9 +136,21 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
             {product.category.name}
           </div>
         )}
-        <h1 className="text-lg sm:text-xl md:text-2xl font-black uppercase tracking-tight text-black mb-1.5 leading-snug">
+        <h1 className="text-lg sm:text-xl md:text-2xl font-black uppercase tracking-tight text-black mb-1 leading-snug">
           {product.name}
         </h1>
+
+        {/* Rating summary anchor */}
+        <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Star key={s} size={12} className="fill-black text-black" />
+            ))}
+          </div>
+          <a href="#reviews" className="text-[11px] font-semibold text-gray hover:text-black underline transition-colors">
+            5.0 (Reviews & Fit)
+          </a>
+        </div>
         
         {/* Price Display */}
         <div className="flex items-baseline gap-2.5 mb-3.5">
