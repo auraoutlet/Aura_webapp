@@ -252,27 +252,92 @@ export default function CheckoutPage() {
         paymentMethod === 'card' ? 'Credit / Debit Card' :
         paymentMethod === 'upi' ? 'UPI / NetBanking' : 'Cash on Delivery';
 
-      const result = await createOrderInDb({
-        userId: currentUser.id,
-        addressId: selectedAddressId,
-        subtotal,
-        discount: discountAmount,
-        shippingFee: shipping,
-        totalAmount: total,
-        items: orderItemsInput,
-        couponCode: appliedCoupon?.code,
-        paymentMethod: paymentMethodLabel,
-      });
+      if (paymentMethod === 'cod') {
+        const result = await createOrderInDb({
+          userId: currentUser.id,
+          addressId: selectedAddressId,
+          subtotal,
+          discount: discountAmount,
+          shippingFee: shipping,
+          totalAmount: total,
+          items: orderItemsInput,
+          couponCode: appliedCoupon?.code,
+          paymentMethod: paymentMethodLabel,
+          paymentStatus: 'pending',
+        });
 
-      if (!result.success || !result.orderNumber) {
-        throw new Error(result.error || 'Failed to place order');
+        if (!result.success || !result.orderNumber) {
+          throw new Error(result.error || 'Failed to place order');
+        }
+
+        clearCart();
+        router.push(`/order-success?order=${encodeURIComponent(result.orderNumber)}&id=${encodeURIComponent(result.orderId!)}`);
+      } else {
+        // Cashfree Payment Flow
+        const orderId = `ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const orderNumber = `AO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+        // 1. Pre-insert order into Supabase with PENDING status
+        const dbResult = await createOrderInDb({
+          orderId,
+          orderNumber,
+          userId: currentUser.id,
+          addressId: selectedAddressId,
+          subtotal,
+          discount: discountAmount,
+          shippingFee: shipping,
+          totalAmount: total,
+          items: orderItemsInput,
+          couponCode: appliedCoupon?.code,
+          paymentMethod: paymentMethodLabel,
+          paymentStatus: 'PENDING',
+          orderStatus: 'PENDING',
+        });
+
+        if (!dbResult.success) {
+          throw new Error(dbResult.error || 'Failed to initialize order in database');
+        }
+
+        // Fetch user data for Cashfree customer details
+        const customer_name = addresses.find(a => a.id === selectedAddressId)?.full_name || currentUser.email?.split('@')[0] || 'Customer';
+        const customer_email = currentUser.email || 'customer@auraoutlet.com';
+        const customer_phone = addresses.find(a => a.id === selectedAddressId)?.phone || '9999999999';
+
+        const response = await fetch('/api/cashfree/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: total,
+            orderId,
+            customer_name,
+            customer_email,
+            customer_phone,
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to create payment session with Cashfree');
+        }
+
+        // Initialize Cashfree
+        // @ts-ignore
+        const CashfreeSDK = window.Cashfree;
+        if (!CashfreeSDK) {
+          throw new Error('Cashfree payment SDK is loading. Please try again.');
+        }
+
+        const cashfree = CashfreeSDK({
+          mode: process.env.NEXT_PUBLIC_CASHFREE_ENVIRONMENT === 'production' ? 'production' : 'sandbox',
+        });
+
+        // Redirect to Cashfree Checkout
+        cashfree.checkout({
+          paymentSessionId: data.payment_session_id,
+          returnUrl: `${window.location.origin}/payment/return?order_id={order_id}`,
+          redirectTarget: '_self',
+        });
       }
-
-      // Clear local cart
-      clearCart();
-
-      // Navigate to order success with live order data
-      router.push(`/order-success?order=${encodeURIComponent(result.orderNumber)}&id=${encodeURIComponent(result.orderId!)}`);
     } catch (err: any) {
       setOrderError(err.message || 'Error occurred while placing your order. Please try again.');
       setIsPlacingOrder(false);
@@ -299,12 +364,12 @@ export default function CheckoutPage() {
   }
 
   return (
-    <Container className="py-12 md:py-20">
+    <Container className="py-6 md:py-10">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl md:text-5xl font-black tracking-widest uppercase mb-12 text-center">Checkout</h1>
+        <h1 className="text-xl md:text-2xl font-black tracking-widest uppercase mb-6 text-center">Checkout</h1>
 
         {/* Step Indicator */}
-        <div className="flex items-center justify-between mb-14 relative">
+        <div className="flex items-center justify-between mb-8 relative max-w-md mx-auto">
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-px bg-border -z-10"></div>
           
           {[
@@ -316,17 +381,17 @@ export default function CheckoutPage() {
             const isCompleted = step > s.num;
             
             return (
-              <div key={s.num} className="flex flex-col items-center bg-white px-3 md:px-5">
+              <div key={s.num} className="flex flex-col items-center bg-white px-2 sm:px-3">
                 <div className={cn(
-                  "w-11 h-11 md:w-12 md:h-12 rounded-full flex items-center justify-center text-sm md:text-base font-bold border-2 mb-2 transition-colors",
-                  isActive ? "border-black bg-black text-white shadow-md" : 
+                  "w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 mb-1 transition-colors",
+                  isActive ? "border-black bg-black text-white shadow-sm" : 
                   isCompleted ? "border-black bg-black text-white" : 
                   "border-border bg-white text-gray"
                 )}>
-                  {isCompleted ? <Check className="w-5 h-5 md:w-6 md:h-6" /> : s.num}
+                  {isCompleted ? <Check className="w-4 h-4" /> : s.num}
                 </div>
                 <span className={cn(
-                  "text-xs md:text-sm uppercase tracking-widest font-extrabold",
+                  "text-[10px] sm:text-xs uppercase tracking-wider font-extrabold",
                   isActive || isCompleted ? "text-black" : "text-gray"
                 )}>
                   {s.label}
@@ -337,76 +402,76 @@ export default function CheckoutPage() {
         </div>
 
         {orderError && (
-          <div className="mb-8 p-4 bg-red-50 border border-error/30 text-error text-xs font-bold flex items-center gap-2">
-            <AlertCircle size={16} className="shrink-0" />
+          <div className="mb-6 p-3 bg-red-50 border border-error/30 text-error text-xs font-bold flex items-center gap-2">
+            <AlertCircle size={15} className="shrink-0" />
             <span>{orderError}</span>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           {/* Main Content Area */}
           <div className="lg:col-span-7 xl:col-span-8">
             
             {/* STEP 1: ADDRESS */}
             {step === 1 && (
-              <div className="space-y-6 animate-fade-in">
-                <h2 className="text-xl md:text-2xl font-black tracking-wide uppercase text-black">Select Delivery Address</h2>
+              <div className="space-y-4 animate-fade-in">
+                <h2 className="text-base md:text-lg font-black tracking-wide uppercase text-black">Select Delivery Address</h2>
                 
                 {!showAddressForm ? (
                   <>
                     {addresses.length === 0 ? (
-                      <div className="border border-border p-8 text-center bg-off-white/40">
-                        <MapPin className="w-10 h-10 mx-auto text-gray-400 mb-3" />
-                        <p className="text-sm font-bold uppercase tracking-wider text-black mb-1">No Saved Addresses</p>
-                        <p className="text-xs text-gray-500 mb-6">Please add a shipping address to proceed with checkout.</p>
+                      <div className="border border-border p-6 text-center bg-off-white/40">
+                        <MapPin className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                        <p className="text-xs font-bold uppercase tracking-wider text-black mb-1">No Saved Addresses</p>
+                        <p className="text-[11px] text-gray-500 mb-4">Please add a shipping address to proceed with checkout.</p>
                         <Button 
                           variant="outline" 
                           onClick={() => setShowAddressForm(true)}
-                          className="font-bold text-xs uppercase tracking-wider gap-2 mx-auto"
+                          className="font-bold text-xs uppercase tracking-wider gap-1.5 mx-auto h-9"
                         >
-                          <Plus size={16} />
+                          <Plus size={14} />
                           Add Shipping Address
                         </Button>
                       </div>
                     ) : (
-                      <div className="grid gap-4">
+                      <div className="grid gap-3">
                         {addresses.map((address) => (
                           <div 
                             key={address.id}
                             onClick={() => setSelectedAddressId(address.id)}
                             className={cn(
-                              "border p-6 cursor-pointer transition-all relative",
+                              "border p-3.5 sm:p-4 cursor-pointer transition-all relative",
                               selectedAddressId === address.id ? "border-black bg-off-white/40 ring-1 ring-black" : "border-border hover:border-black/50"
                             )}
                           >
                             {selectedAddressId === address.id && (
-                              <div className="absolute top-6 right-6 text-black bg-white rounded-full p-1 border border-black">
-                                <Check className="w-4 h-4" />
+                              <div className="absolute top-3.5 right-3.5 text-black bg-white rounded-full p-0.5 border border-black">
+                                <Check className="w-3.5 h-3.5" />
                               </div>
                             )}
                             
-                            <div className="flex items-center gap-3 mb-2">
-                              <span className="font-bold text-base md:text-lg text-black">{address.full_name}</span>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-bold text-sm text-black">{address.full_name}</span>
                               {address.is_default && (
-                                <Badge variant="outline" className="text-[10px] px-2 py-0.5 font-bold uppercase tracking-widest">Default</Badge>
+                                <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-bold uppercase tracking-widest">Default</Badge>
                               )}
                             </div>
                             
-                            <div className="text-sm md:text-base text-gray space-y-1 max-w-[85%] leading-relaxed">
+                            <div className="text-xs text-gray space-y-0.5 max-w-[85%] leading-relaxed">
                               <p className="text-black font-medium">{address.address_line_1}</p>
                               {address.address_line_2 && <p>{address.address_line_2}</p>}
                               <p>{address.city}, {address.state} {address.pincode}</p>
-                              <p className="mt-2 text-black font-medium">Phone: {address.phone}</p>
+                              <p className="mt-1 text-black font-medium">Phone: {address.phone}</p>
                             </div>
                           </div>
                         ))}
 
                         <Button 
                           variant="outline" 
-                          className="w-full flex items-center justify-center gap-2 border-dashed border-2 py-8 text-sm md:text-base font-bold tracking-wider"
+                          className="w-full flex items-center justify-center gap-1.5 border-dashed border-2 py-3 text-xs font-bold tracking-wider h-10"
                           onClick={() => setShowAddressForm(true)}
                         >
-                          <Plus className="w-5 h-5" />
+                          <Plus className="w-4 h-4" />
                           ADD NEW ADDRESS
                         </Button>
                       </div>
@@ -414,7 +479,7 @@ export default function CheckoutPage() {
 
                     {addresses.length > 0 && (
                       <Button 
-                        className="w-full mt-8 h-14 text-sm md:text-base font-black tracking-widest" 
+                        className="w-full mt-4 h-11 text-xs md:text-sm font-black tracking-widest uppercase" 
                         size="lg"
                         disabled={!selectedAddressId}
                         onClick={() => setStep(2)}
@@ -521,11 +586,11 @@ export default function CheckoutPage() {
 
             {/* STEP 2: REVIEW */}
             {step === 2 && (
-              <div className="space-y-10 animate-fade-in">
+              <div className="space-y-6 animate-fade-in">
                 <div>
-                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
-                    <h2 className="text-xl md:text-2xl font-black tracking-wide uppercase text-black">Delivery Address</h2>
-                    <button onClick={() => setStep(1)} className="text-sm font-bold text-black hover:underline uppercase tracking-wider">
+                  <div className="flex items-center justify-between mb-2.5 pb-1.5 border-b border-border">
+                    <h2 className="text-base md:text-lg font-black tracking-wide uppercase text-black">Delivery Address</h2>
+                    <button onClick={() => setStep(1)} className="text-xs font-bold text-black hover:underline uppercase tracking-wider">
                       Change
                     </button>
                   </div>
@@ -533,23 +598,23 @@ export default function CheckoutPage() {
                   {selectedAddressId && (() => {
                     const addr = addresses.find(a => a.id === selectedAddressId);
                     return addr ? (
-                      <div className="bg-off-white p-6 text-sm md:text-base border border-border">
-                        <p className="font-bold text-base md:text-lg mb-1 text-black">{addr.full_name}</p>
+                      <div className="bg-off-white p-3.5 sm:p-4 text-xs sm:text-sm border border-border">
+                        <p className="font-bold text-sm mb-0.5 text-black">{addr.full_name}</p>
                         <p className="text-gray leading-relaxed">
                           {addr.address_line_1}{addr.address_line_2 ? `, ${addr.address_line_2}` : ''}, {addr.city}, {addr.state} {addr.pincode}
                         </p>
-                        <p className="text-black font-semibold mt-2">Phone: {addr.phone}</p>
+                        <p className="text-black font-semibold mt-1">Phone: {addr.phone}</p>
                       </div>
                     ) : null;
                   })()}
                 </div>
 
                 <div>
-                  <h2 className="text-xl md:text-2xl font-black tracking-wide uppercase mb-6 text-black">Order Items</h2>
-                  <div className="space-y-4">
+                  <h2 className="text-base md:text-lg font-black tracking-wide uppercase mb-3 text-black">Order Items ({cartItems.length})</h2>
+                  <div className="space-y-2.5">
                     {cartItems.map(item => (
-                      <div key={item.id} className="flex gap-4 border border-border p-4 bg-white">
-                        <div className="w-24 h-24 md:w-28 md:h-28 bg-off-white shrink-0 flex items-center justify-center overflow-hidden border border-border">
+                      <div key={item.id} className="flex gap-3 border border-border p-3 bg-white">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-off-white shrink-0 flex items-center justify-center overflow-hidden border border-border">
                           {item.product?.images && item.product.images.length > 0 && item.product.images[0].image_url ? (
                             <img 
                               src={item.product.images[0].image_url} 
@@ -561,14 +626,14 @@ export default function CheckoutPage() {
                           )}
                         </div>
                         <div className="grow flex flex-col justify-center">
-                          <h3 className="font-bold text-base md:text-lg line-clamp-1 text-black">{item.product?.name}</h3>
-                          <div className="text-xs md:text-sm text-gray mt-1 font-medium">
+                          <h3 className="font-bold text-xs sm:text-sm line-clamp-1 text-black">{item.product?.name}</h3>
+                          <div className="text-[11px] text-gray mt-0.5 font-medium">
                             {item.variant?.color && <span>Color: <strong className="text-black">{item.variant.color}</strong> | </span>}
                             {item.variant?.size && <span>Size: <strong className="text-black">{item.variant.size}</strong></span>}
                           </div>
-                          <div className="text-sm md:text-base mt-2 flex justify-between items-center">
+                          <div className="text-xs mt-1 flex justify-between items-center">
                             <span className="text-gray">Qty: <strong className="text-black">{item.quantity}</strong></span>
-                            <span className="font-black text-base md:text-lg text-black">{formatPrice((item.variant?.price || item.product?.base_price || 0) * item.quantity)}</span>
+                            <span className="font-black text-sm text-black">{formatPrice((item.variant?.price || item.product?.base_price || 0) * item.quantity)}</span>
                           </div>
                         </div>
                       </div>
@@ -576,12 +641,12 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center pt-6 border-t border-border">
-                  <Button variant="outline" onClick={() => setStep(1)} className="font-bold text-xs md:text-sm tracking-wider">
-                    BACK TO ADDRESS
+                <div className="flex justify-between items-center pt-3 border-t border-border">
+                  <Button variant="outline" onClick={() => setStep(1)} className="font-bold text-xs tracking-wider h-10">
+                    Back to Address
                   </Button>
-                  <Button size="lg" onClick={() => setStep(3)} className="h-14 px-8 text-sm md:text-base font-black tracking-widest">
-                    PROCEED TO PAYMENT
+                  <Button size="lg" onClick={() => setStep(3)} className="h-10 px-6 text-xs md:text-sm font-black tracking-widest uppercase">
+                    Proceed to Payment
                   </Button>
                 </div>
               </div>
@@ -589,52 +654,52 @@ export default function CheckoutPage() {
 
             {/* STEP 3: PAYMENT */}
             {step === 3 && (
-              <div className="space-y-8 animate-fade-in">
-                <h2 className="text-xl md:text-2xl font-black tracking-wide uppercase text-black">Payment Method</h2>
+              <div className="space-y-5 animate-fade-in">
+                <h2 className="text-base md:text-lg font-black tracking-wide uppercase text-black">Payment Method</h2>
                 
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {[
                     { id: 'card', label: 'Credit / Debit Card', desc: 'Visa, MasterCard, RuPay' },
-                    { id: 'upi', label: 'UPI / Net Banking', desc: 'Google Pay, PhonePe, Paytm, All Banks' },
+                    { id: 'upi', label: 'UPI / Net Banking', desc: 'Google Pay, PhonePe, Paytm, QR Code' },
                     { id: 'cod', label: 'Cash on Delivery (COD)', desc: 'Pay with cash at your doorstep' },
                   ].map((method) => (
                     <div 
                       key={method.id}
                       onClick={() => setPaymentMethod(method.id as any)}
                       className={cn(
-                        "border p-5 cursor-pointer flex items-center justify-between transition-all",
+                        "border p-3.5 sm:p-4 cursor-pointer flex items-center justify-between transition-all",
                         paymentMethod === method.id ? "border-black bg-off-white/40 ring-1 ring-black" : "border-border hover:border-black/50"
                       )}
                     >
                       <div>
-                        <p className="font-bold text-base text-black uppercase tracking-wider">{method.label}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{method.desc}</p>
+                        <p className="font-bold text-xs sm:text-sm text-black uppercase tracking-wider">{method.label}</p>
+                        <p className="text-[11px] text-gray-500 mt-0.5">{method.desc}</p>
                       </div>
                       <div className={cn(
-                        "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                        "w-4 h-4 rounded-full border-2 flex items-center justify-center",
                         paymentMethod === method.id ? "border-black bg-black" : "border-gray-300"
                       )}>
-                        {paymentMethod === method.id && <div className="w-2 h-2 rounded-full bg-white" />}
+                        {paymentMethod === method.id && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="border border-border p-6 bg-off-white text-center">
-                  <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Click below to confirm and place your order</p>
+                <div className="border border-border p-4 bg-off-white text-center">
+                  <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-3">Click below to confirm and place your order</p>
                   <Button 
                     size="lg" 
-                    className="w-full h-16 text-base font-black tracking-widest" 
+                    className="w-full h-11 text-xs md:text-sm font-black tracking-widest uppercase" 
                     onClick={handlePlaceOrder}
                     disabled={isPlacingOrder}
                   >
-                    {isPlacingOrder ? 'PLACING ORDER...' : `CONFIRM & PAY ${formatPrice(total)}`}
+                    {isPlacingOrder ? 'Processing...' : `Confirm & Pay ${formatPrice(total)}`}
                   </Button>
                 </div>
                 
-                <div className="pt-6 border-t border-border">
-                  <Button variant="outline" onClick={() => setStep(2)} disabled={isPlacingOrder} className="font-bold text-xs md:text-sm tracking-wider">
-                    BACK TO REVIEW
+                <div className="pt-3 border-t border-border">
+                  <Button variant="outline" onClick={() => setStep(2)} disabled={isPlacingOrder} className="font-bold text-xs tracking-wider h-10">
+                    Back to Review
                   </Button>
                 </div>
               </div>
@@ -644,43 +709,43 @@ export default function CheckoutPage() {
 
           {/* Sidebar: Price Details */}
           <div className="lg:col-span-5 xl:col-span-4">
-            <div className="bg-off-white p-6 md:p-8 sticky top-24 border border-border">
-              <h2 className="text-xl md:text-2xl font-black tracking-wide uppercase mb-6 border-b border-border pb-4 text-black">
+            <div className="bg-off-white p-4 sm:p-5 sticky top-20 border border-border">
+              <h2 className="text-sm md:text-base font-black tracking-wide uppercase mb-3.5 border-b border-border pb-2.5 text-black">
                 Price Details
               </h2>
               
               {/* Coupon Section */}
-              <div className="mb-6 pb-6 border-b border-border">
+              <div className="mb-3.5 pb-3.5 border-b border-border">
                 {!appliedCoupon ? (
                   <div>
                     <div className="flex gap-2">
                       <Input 
-                        placeholder="ENTER COUPON CODE" 
+                        placeholder="COUPON CODE" 
                         value={couponCode} 
                         onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                        className="rounded-none uppercase tracking-wider text-xs md:text-sm"
+                        className="rounded-none uppercase tracking-wider text-xs h-9"
                         disabled={isApplyingCoupon}
                       />
                       <Button 
                         variant="primary" 
                         onClick={handleApplyCoupon}
                         disabled={isApplyingCoupon || !couponCode.trim()}
-                        className="shrink-0 font-black tracking-wider text-xs px-5"
+                        className="shrink-0 font-black tracking-wider text-xs px-4 h-9"
                       >
                         {isApplyingCoupon ? '...' : 'APPLY'}
                       </Button>
                     </div>
-                    {couponError && <p className="text-xs text-error mt-2 font-bold">{couponError}</p>}
+                    {couponError && <p className="text-[11px] text-error mt-1.5 font-bold">{couponError}</p>}
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between bg-black text-white p-4">
+                  <div className="flex items-center justify-between bg-black text-white p-3">
                     <div>
-                      <span className="font-black text-xs md:text-sm uppercase tracking-widest block">{appliedCoupon.code} APPLIED</span>
-                      <span className="text-[11px] text-gray-300 font-medium">You saved {formatPrice(discountAmount)}</span>
+                      <span className="font-black text-xs uppercase tracking-widest block">{appliedCoupon.code} APPLIED</span>
+                      <span className="text-[10px] text-gray-300 font-medium">You saved {formatPrice(discountAmount)}</span>
                     </div>
                     <button 
                       onClick={() => setAppliedCoupon(null)} 
-                      className="text-xs uppercase font-extrabold hover:text-red-400 tracking-wider transition-colors ml-2"
+                      className="text-[11px] uppercase font-extrabold hover:text-red-400 tracking-wider transition-colors ml-2"
                     >
                       REMOVE
                     </button>
@@ -689,7 +754,7 @@ export default function CheckoutPage() {
               </div>
 
               {/* Price Breakdown */}
-              <div className="space-y-4 text-sm md:text-base font-medium">
+              <div className="space-y-2 text-xs sm:text-sm font-medium">
                 <div className="flex justify-between">
                   <span className="text-gray">Bag Total</span>
                   <span className="font-bold text-black">{formatPrice(subtotal)}</span>
@@ -707,7 +772,7 @@ export default function CheckoutPage() {
                   <span className="font-bold text-black">{shipping === 0 ? 'FREE' : formatPrice(shipping)}</span>
                 </div>
                 
-                <div className="border-t border-border pt-4 flex justify-between items-baseline font-black text-lg md:text-xl text-black">
+                <div className="border-t border-border pt-2.5 flex justify-between items-baseline font-black text-sm sm:text-base text-black">
                   <span className="uppercase tracking-wider">Total Amount</span>
                   <span>{formatPrice(total)}</span>
                 </div>

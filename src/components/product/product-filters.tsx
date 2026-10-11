@@ -46,12 +46,12 @@ function FilterContent({
   isMobile = false,
 }: FilterContentProps) {
   return (
-    <div className="space-y-7">
+    <div className="space-y-4 text-xs">
       {isMobile && (
-        <div className="flex items-center justify-between lg:hidden mb-6 pb-3 border-b-2 border-black">
-          <h2 className="text-xl font-black uppercase tracking-wider text-black">Filters</h2>
+        <div className="flex items-center justify-between lg:hidden mb-4 pb-2 border-b-2 border-black">
+          <h2 className="text-base font-black uppercase tracking-wider text-black">Filters</h2>
           <button onClick={onClose} aria-label="Close filters" className="p-1 hover:text-gray transition-colors">
-            <X size={22} />
+            <X size={18} />
           </button>
         </div>
       )}
@@ -59,17 +59,17 @@ function FilterContent({
       {/* Categories */}
       {categories.length > 0 && (
         <div>
-          <h3 className="font-black uppercase mb-3 text-xs md:text-sm tracking-[0.2em] text-black pb-1.5 border-b border-border">Categories</h3>
-          <div className="space-y-2.5 mt-3">
+          <h3 className="font-black uppercase mb-2 text-xs tracking-[0.18em] text-black pb-1 border-b border-border">Categories</h3>
+          <div className="space-y-1.5 mt-2">
             {categories.map((cat) => (
-              <label key={cat.id} className="flex items-center gap-2.5 cursor-pointer hover:text-black transition-colors group">
+              <label key={cat.id} className="flex items-center gap-2 cursor-pointer hover:text-black transition-colors group">
                 <input 
                   type="checkbox" 
-                  className="w-4 h-4 accent-black border-black cursor-pointer"
+                  className="w-3.5 h-3.5 accent-black border-black cursor-pointer"
                   checked={selectedCategories.includes(cat.id)}
                   onChange={() => onToggleCategory?.(cat.id)}
                 />
-                <span className="text-sm md:text-base font-medium text-black/80 group-hover:text-black">{cat.name}</span>
+                <span className="text-xs font-medium text-black/80 group-hover:text-black">{cat.name}</span>
               </label>
             ))}
           </div>
@@ -78,14 +78,14 @@ function FilterContent({
 
       {/* Price */}
       <div>
-        <h3 className="font-black uppercase mb-3 text-xs md:text-sm tracking-[0.2em] text-black pb-1.5 border-b border-border">Price (₹)</h3>
-        <div className="flex items-center gap-2 mt-3">
+        <h3 className="font-black uppercase mb-2 text-xs tracking-[0.18em] text-black pb-1 border-b border-border">Price (₹)</h3>
+        <div className="flex items-center gap-2 mt-2">
           <input 
             type="number" 
             placeholder="Min" 
             value={minPrice}
             onChange={(e) => onMinPriceChange?.(e.target.value)}
-            className="w-full p-2.5 border border-border text-sm font-semibold outline-none focus:border-black bg-white" 
+            className="w-full p-2 border border-border text-xs font-semibold outline-none focus:border-black bg-white" 
           />
           <span className="text-gray font-bold">-</span>
           <input 
@@ -93,15 +93,15 @@ function FilterContent({
             placeholder="Max" 
             value={maxPrice}
             onChange={(e) => onMaxPriceChange?.(e.target.value)}
-            className="w-full p-2.5 border border-border text-sm font-semibold outline-none focus:border-black bg-white" 
+            className="w-full p-2 border border-border text-xs font-semibold outline-none focus:border-black bg-white" 
           />
         </div>
       </div>
 
       {/* Size */}
       <div>
-        <h3 className="font-black uppercase mb-3 text-xs md:text-sm tracking-[0.2em] text-black pb-1.5 border-b border-border">Size</h3>
-        <div className="flex flex-wrap gap-2 mt-3">
+        <h3 className="font-black uppercase mb-2 text-xs tracking-[0.18em] text-black pb-1 border-b border-border">Size</h3>
+        <div className="flex flex-wrap gap-1.5 mt-2">
           {SIZES.map((size) => {
             const isSelected = selectedSizes.includes(size);
             return (
@@ -109,7 +109,7 @@ function FilterContent({
                 key={size} 
                 onClick={() => onToggleSize?.(size)}
                 className={cn(
-                  "w-11 h-11 border text-xs md:text-sm font-extrabold uppercase transition-all",
+                  "w-8 h-8 border text-xs font-bold uppercase transition-all",
                   isSelected
                     ? "border-black bg-black text-white shadow-sm"
                     : "border-border hover:border-black text-black bg-white"
@@ -124,21 +124,21 @@ function FilterContent({
 
       {/* Availability */}
       <div>
-        <h3 className="font-black uppercase mb-3 text-xs md:text-sm tracking-[0.2em] text-black pb-1.5 border-b border-border">Availability</h3>
-        <label className="flex items-center gap-2.5 cursor-pointer mt-3">
+        <h3 className="font-black uppercase mb-2 text-xs tracking-[0.18em] text-black pb-1 border-b border-border">Availability</h3>
+        <label className="flex items-center gap-2 cursor-pointer mt-2">
           <input 
             type="checkbox" 
-            className="w-4 h-4 accent-black border-black cursor-pointer"
+            className="w-3.5 h-3.5 accent-black border-black cursor-pointer"
             checked={inStockOnly}
             onChange={() => onToggleInStock?.()}
           />
-          <span className="text-sm md:text-base font-medium text-black">In Stock Only</span>
+          <span className="text-xs font-medium text-black">In Stock Only</span>
         </label>
       </div>
 
       <Button 
         variant="outline" 
-        className="w-full uppercase text-xs md:text-sm font-black tracking-widest h-12 mt-2" 
+        className="w-full uppercase text-[11px] font-black tracking-widest h-9 mt-1" 
         onClick={onClear}
       >
         Clear Filters
@@ -159,7 +159,7 @@ export function ProductFilters(props: ProductFiltersProps) {
   useEffect(() => {
     if (props.categories && props.categories.length > 0) {
       setCategories(props.categories);
-    } else {
+    } else if (!props.categories) {
       getCategories().then(data => {
         if (data && data.length > 0) setCategories(data);
       });
@@ -219,17 +219,17 @@ export function ProductFilters(props: ProductFiltersProps) {
     <>
       <Button 
         variant="outline" 
-        className="lg:hidden flex items-center justify-center gap-2 uppercase text-xs font-bold tracking-widest w-full md:w-auto h-10"
+        className="lg:hidden flex items-center justify-center gap-1.5 uppercase text-xs font-bold tracking-wider w-full md:w-auto h-9"
         onClick={() => setIsOpen(true)}
       >
-        <Filter size={15} /> Filters
+        <Filter size={14} /> Filters
       </Button>
 
       {/* Mobile Slide-out */}
       {isOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setIsOpen(false)} />
-          <div className="absolute top-0 right-0 bottom-0 w-4/5 max-w-sm bg-white p-6 overflow-y-auto shadow-xl">
+          <div className="absolute top-0 right-0 bottom-0 w-3/4 max-w-xs bg-white p-5 overflow-y-auto shadow-xl">
             <FilterContent 
               {...filterProps}
               onClose={() => setIsOpen(false)}
@@ -240,7 +240,7 @@ export function ProductFilters(props: ProductFiltersProps) {
       )}
 
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block w-64 shrink-0 bg-off-white/40 p-6 border border-border">
+      <div className="hidden lg:block w-52 shrink-0 bg-off-white/30 p-4 border border-border">
         <FilterContent {...filterProps} />
       </div>
     </>

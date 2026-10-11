@@ -1,135 +1,134 @@
-'use client';
+import { Mail, Phone, MapPin, Clock } from 'lucide-react';
+import { Container } from '@/components/ui';
 
-import { useState } from 'react';
-import { Mail, Phone, MapPin } from 'lucide-react';
-import { Container, Button, Input, Textarea } from '@/components/ui';
+// Inline Instagram icon since lucide-react does not bundle an Instagram export
+function InstagramIcon({ className = 'w-5 h-5' }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+    </svg>
+  );
+}
 
 export default function ContactPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    // Simulate api call
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsSubmitted(true);
-    }, 1000);
-  };
+  const contactCards = [
+    {
+      icon: Mail,
+      title: 'Email Us',
+      detail: 'support@auraoutlet.com',
+      subtext: 'Average response time: within 24 hours',
+      actionLabel: 'Send Email',
+      href: 'mailto:support@auraoutlet.com',
+    },
+    {
+      icon: Phone,
+      title: 'Phone & WhatsApp',
+      detail: '+91 83009 48486',
+      subtext: 'Direct customer support line',
+      actionLabel: 'Call / WhatsApp',
+      href: 'tel:+918300948486',
+    },
+    {
+      icon: InstagramIcon,
+      isCustomIcon: true,
+      title: 'Instagram',
+      detail: '@aura.outlet._',
+      subtext: 'DM us for sizing, fit checks & drops',
+      actionLabel: 'Open Profile',
+      href: 'https://www.instagram.com/aura.outlet._/',
+      target: '_blank',
+    },
+    {
+      icon: MapPin,
+      title: 'Headquarters',
+      detail: 'Salem, Tamil Nadu, India',
+      subtext: 'Fulfillment & Distribution Hub',
+      actionLabel: 'India Delivery Network',
+      href: null,
+    },
+    {
+      icon: Clock,
+      title: 'Support Hours',
+      detail: 'Mon – Sat: 9:00 AM – 8:00 PM IST',
+      subtext: 'Orders dispatch within 24-48 hours',
+      actionLabel: null,
+      href: null,
+    },
+  ];
 
   return (
-    <div className="py-16 md:py-24">
+    <div className="py-8 md:py-12 bg-white">
       <Container>
-        <div className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-wider uppercase mb-4">Contact Us</h1>
-          <p className="text-gray-500 max-w-2xl">
-            Have a question about your order, need sizing advice, or just want to say hello? 
-            We&apos;re here to help. Fill out the form below or reach us directly.
+        {/* Compact Header */}
+        <div className="max-w-2xl mb-8">
+          <p className="text-[11px] font-bold tracking-[0.2em] text-gray uppercase mb-1">
+            Support & Inquiries
+          </p>
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight uppercase text-black">
+            Contact AURA OUTLET
+          </h1>
+          <p className="text-xs md:text-sm text-gray mt-1.5 leading-relaxed">
+            Have questions about your order, sizing, or returns? Reach out to our team directly through any of our channels below.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-          {/* Contact Info */}
-          <div className="space-y-12">
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold tracking-wider uppercase border-b pb-4">Get In Touch</h2>
-              
-              <div className="space-y-8">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-gray-50 rounded-full">
-                    <Mail size={24} className="text-black" />
+        {/* Compact Contact Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {contactCards.map((card, idx) => {
+            const Icon = card.icon;
+            return (
+              <div 
+                key={idx} 
+                className="border border-border p-5 bg-white flex flex-col justify-between hover:border-black transition-colors"
+              >
+                <div>
+                  <div className="w-9 h-9 bg-black text-white flex items-center justify-center mb-3">
+                    <Icon className="w-4 h-4" />
                   </div>
-                  <div>
-                    <h3 className="font-bold tracking-wider uppercase mb-1">Email</h3>
-                    <p className="text-gray-600">support@auraoutlet.com</p>
-                    <p className="text-sm text-gray-500 mt-1">We aim to reply within 24 hours.</p>
-                  </div>
+                  <h3 className="text-xs font-bold tracking-wider uppercase text-gray mb-1">
+                    {card.title}
+                  </h3>
+                  <p className="text-sm md:text-base font-black text-black">
+                    {card.detail}
+                  </p>
+                  <p className="text-xs text-gray mt-1">
+                    {card.subtext}
+                  </p>
                 </div>
 
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-gray-50 rounded-full">
-                    <Phone size={24} className="text-black" />
+                {card.href && card.actionLabel && (
+                  <div className="mt-4 pt-3 border-t border-border">
+                    <a
+                      href={card.href}
+                      target={card.target || undefined}
+                      rel={card.target ? 'noopener noreferrer' : undefined}
+                      className="text-xs font-bold uppercase tracking-wider text-black hover:underline inline-flex items-center gap-1"
+                    >
+                      {card.actionLabel} &rarr;
+                    </a>
                   </div>
-                  <div>
-                    <h3 className="font-bold tracking-wider uppercase mb-1">Phone</h3>
-                    <p className="text-gray-600">+1 (800) 123-4567</p>
-                    <p className="text-sm text-gray-500 mt-1">Mon-Fri, 9am - 5pm EST</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-gray-50 rounded-full">
-                    <MapPin size={24} className="text-black" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold tracking-wider uppercase mb-1">Headquarters</h3>
-                    <p className="text-gray-600">
-                      123 Fashion Ave<br />
-                      Suite 400<br />
-                      New York, NY 10001
-                    </p>
-                  </div>
-                </div>
+                )}
               </div>
-            </div>
-          </div>
+            );
+          })}
+        </div>
 
-          {/* Contact Form */}
-          <div className="bg-gray-50 p-8 md:p-10">
-            <h2 className="text-2xl font-bold tracking-wider uppercase mb-8">Send a Message</h2>
-            
-            {isSubmitted ? (
-              <div className="h-full flex flex-col items-center justify-center text-center space-y-4 py-12">
-                <div className="w-16 h-16 bg-black text-white rounded-full flex items-center justify-center mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-                <h3 className="text-2xl font-bold tracking-wider uppercase">Message Sent</h3>
-                <p className="text-gray-600">
-                  Thank you for reaching out. We will get back to you as soon as possible.
-                </p>
-                <Button 
-                  onClick={() => setIsSubmitted(false)} 
-                  variant="outline" 
-                  className="mt-6"
-                >
-                  SEND ANOTHER MESSAGE
-                </Button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label htmlFor="name" className="text-sm font-medium">Name</label>
-                    <Input id="name" required placeholder="Your name" />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm font-medium">Email</label>
-                    <Input id="email" type="email" required placeholder="your@email.com" />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="subject" className="text-sm font-medium">Subject</label>
-                  <Input id="subject" required placeholder="Order inquiry, Returns, etc." />
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="message" className="text-sm font-medium">Message</label>
-                  <Textarea 
-                    id="message" 
-                    required 
-                    placeholder="How can we help you?" 
-                    rows={5}
-                  />
-                </div>
-                
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'SENDING...' : 'SEND MESSAGE'}
-                </Button>
-              </form>
-            )}
+        {/* Quick FAQ / Order Help Strip */}
+        <div className="mt-8 border border-border bg-off-white p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h4 className="text-xs font-bold tracking-wider uppercase text-black">
+              Need help tracking an active order?
+            </h4>
+            <p className="text-xs text-gray mt-0.5">
+              Check real-time order updates, shipping status, or initiate returns in your account dashboard.
+            </p>
           </div>
+          <a
+            href="/orders"
+            className="text-xs font-bold uppercase tracking-wider bg-black text-white px-4 py-2 hover:bg-black/85 transition-colors shrink-0"
+          >
+            Track Order
+          </a>
         </div>
       </Container>
     </div>

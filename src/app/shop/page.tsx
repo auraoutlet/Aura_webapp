@@ -4,11 +4,13 @@ import { useState, useMemo, useEffect } from 'react';
 import { Container } from '@/components/ui';
 import { ProductGrid, ProductFilters, SortSelect } from '@/components/product';
 import { getProducts } from '@/lib/services/products';
-import { Product } from '@/lib/types';
+import { getCategories } from '@/lib/services/categories';
+import { Product, Category } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 
 export default function ShopPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -19,13 +21,17 @@ export default function ShopPage() {
   const [sort, setSort] = useState('newest');
 
   useEffect(() => {
-    async function loadShopProducts() {
+    async function loadShopData() {
       setLoading(true);
-      const data = await getProducts();
-      setProducts(data);
+      const [prods, cats] = await Promise.all([
+        getProducts(),
+        getCategories(),
+      ]);
+      setProducts(prods);
+      setCategories(cats);
       setLoading(false);
     }
-    loadShopProducts();
+    loadShopData();
   }, []);
 
   const handleToggleCategory = (id: string) => {
@@ -96,6 +102,7 @@ export default function ShopPage() {
   }, [products, selectedCategories, minPrice, maxPrice, selectedSizes, inStockOnly, sort]);
 
   const filterProps = {
+    categories,
     selectedCategories,
     onToggleCategory: handleToggleCategory,
     minPrice,
@@ -110,20 +117,20 @@ export default function ShopPage() {
   };
 
   return (
-    <div className="py-12 md:py-20">
+    <div className="py-6 md:py-10">
       <Container>
         {/* Breadcrumb */}
-        <div className="text-xs md:text-sm font-bold uppercase tracking-wider text-gray mb-8">
+        <div className="text-[11px] md:text-xs font-bold uppercase tracking-wider text-gray mb-4">
           <span className="hover:text-black transition-colors cursor-pointer">Home</span> <span className="mx-2 text-border font-normal">/</span> <span className="text-black">Shop</span>
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4 pb-4 border-b border-border">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-3 pb-3 border-b border-border">
           <div>
-            <h1 className="text-3xl md:text-5xl font-black uppercase tracking-wider mb-2 text-black">All Products</h1>
-            <p className="text-sm md:text-base font-bold text-gray uppercase tracking-widest">{filteredProducts.length} Results</p>
+            <h1 className="text-2xl md:text-3xl font-black uppercase tracking-wider mb-1 text-black">All Products</h1>
+            <p className="text-xs font-bold text-gray uppercase tracking-widest">{filteredProducts.length} Results</p>
           </div>
           
-          <div className="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto">
+          <div className="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto">
             <div className="md:hidden flex-1">
               <ProductFilters {...filterProps} />
             </div>
@@ -131,26 +138,26 @@ export default function ShopPage() {
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-6">
           <div className="hidden lg:block">
             <ProductFilters {...filterProps} />
           </div>
           
           <div className="flex-1">
             {loading ? (
-              <div className="p-20 flex items-center justify-center gap-3 text-sm font-semibold uppercase tracking-wider text-gray">
-                <Loader2 className="h-5 w-5 animate-spin text-black" />
+              <div className="py-16 flex items-center justify-center gap-3 text-xs font-semibold uppercase tracking-wider text-gray">
+                <Loader2 className="h-4 w-4 animate-spin text-black" />
                 Loading catalog...
               </div>
             ) : filteredProducts.length > 0 ? (
               <ProductGrid products={filteredProducts} />
             ) : (
-              <div className="text-center py-20 border border-border">
-                <h3 className="text-xl font-bold uppercase tracking-wider mb-2">No matching products</h3>
-                <p className="text-gray mb-6">Try adjusting your filters or price range.</p>
+              <div className="text-center py-16 border border-border bg-off-white/20">
+                <h3 className="text-lg font-bold uppercase tracking-wider mb-1">No matching products</h3>
+                <p className="text-xs text-gray mb-4">Try adjusting your filters or price range.</p>
                 <button
                   onClick={handleClear}
-                  className="px-6 py-3 bg-black text-white text-xs font-bold uppercase tracking-widest hover:bg-dark transition-colors"
+                  className="px-5 py-2.5 bg-black text-white text-xs font-bold uppercase tracking-widest hover:bg-dark transition-colors"
                 >
                   Clear All Filters
                 </button>

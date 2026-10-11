@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { Container } from '@/components/ui';
 import { ProductGrid } from '@/components/product';
 import { getProductBySlug, getProducts } from '@/lib/services/products';
@@ -33,28 +34,41 @@ export default async function ProductPage({ params }: ProductPageProps) {
     .slice(0, 4);
 
   return (
-    <div className="py-12 md:py-16">
+    <div className="py-4 md:py-6 bg-white min-h-[75vh]">
       <Container>
-        {/* Breadcrumb */}
-        <div className="text-sm text-gray mb-8">
-          <span>Home</span> <span className="mx-2">/</span> 
-          <span>Shop</span> <span className="mx-2">/</span> 
+        {/* Compact Breadcrumb */}
+        <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-gray mb-3">
+          <Link href="/" className="hover:text-black transition-colors">Home</Link> 
+          <span className="mx-1.5 text-border font-normal">/</span> 
+          <Link href="/shop" className="hover:text-black transition-colors">Shop</Link> 
+          <span className="mx-1.5 text-border font-normal">/</span> 
           {product.category && (
             <>
-              <span>{product.category.name}</span> <span className="mx-2">/</span> 
+              <Link href={`/category/${product.category.slug}`} className="hover:text-black transition-colors">
+                {product.category.name}
+              </Link>
+              <span className="mx-1.5 text-border font-normal">/</span> 
             </>
           )}
-          <span className="text-black">{product.name}</span>
+          <span className="text-black truncate max-w-[240px] inline-block align-bottom">{product.name}</span>
         </div>
 
-        <div className="mb-24">
+        {/* Product Details Section */}
+        <div className="mb-8 md:mb-12">
           <ProductDetailClient product={product} />
         </div>
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (
-          <div>
-            <h2 className="text-2xl font-bold uppercase tracking-wider mb-8 text-center">You May Also Like</h2>
+          <div className="pt-6 border-t border-border">
+            <div className="text-center mb-5">
+              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray block mb-0.5">
+                Complete The Fit
+              </span>
+              <h2 className="text-lg md:text-xl font-black uppercase tracking-tight text-black">
+                You May Also Like
+              </h2>
+            </div>
             <ProductGrid products={relatedProducts} />
           </div>
         )}

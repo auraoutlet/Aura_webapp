@@ -9,7 +9,8 @@ import { createClient } from '@/lib/supabase/client';
 
 function LoginForm() {
   const searchParams = useSearchParams();
-  const redirectTarget = searchParams.get('redirect') || '/account';
+  const rawRedirect = searchParams.get('redirect');
+  const redirectTarget = (rawRedirect && rawRedirect !== '/account' && rawRedirect !== '/admin') ? rawRedirect : '/';
   const justRegistered = searchParams.get('registered') === 'true';
 
   const [email, setEmail] = useState('');
@@ -53,7 +54,7 @@ function LoginForm() {
             localStorage.setItem('aura_user_role', 'admin');
             window.location.replace('/admin');
           } else {
-            window.location.replace(redirectTarget === '/admin' ? '/account' : redirectTarget);
+            window.location.replace(redirectTarget);
           }
         }
       } catch (e) {
@@ -159,7 +160,7 @@ function LoginForm() {
         }
 
         setSuccessMessage('Signed in successfully! Redirecting...');
-        const destination = redirectTarget === '/admin' ? '/account' : redirectTarget;
+        const destination = redirectTarget;
         setTimeout(() => {
           window.location.replace(destination);
         }, 300);

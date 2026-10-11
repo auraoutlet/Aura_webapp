@@ -13,6 +13,8 @@ export interface CreateOrderItemInput {
 }
 
 export interface CreateOrderInput {
+  orderId?: string;
+  orderNumber?: string;
   userId: string;
   addressId?: string;
   subtotal: number;
@@ -22,6 +24,8 @@ export interface CreateOrderInput {
   items: CreateOrderItemInput[];
   couponCode?: string;
   paymentMethod?: string;
+  paymentStatus?: string;
+  orderStatus?: OrderStatus;
   notes?: string;
 }
 
@@ -85,13 +89,14 @@ export async function createOrderInDb(input: CreateOrderInput): Promise<{ succes
   try {
     const supabase = createClient();
 
-    const orderId = 'ord_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
-    const orderNumber = 'AO-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const orderId = input.orderId || ('ord_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36));
+    const orderNumber = input.orderNumber || ('AO-' + Math.random().toString(36).substring(2, 8).toUpperCase());
+    const orderStatus = input.orderStatus || (input.paymentStatus?.toUpperCase() === 'PENDING' ? 'PENDING' : 'CONFIRMED');
 
     // 1. Insert order
     const { error: orderError } = await supabase
       .from('orders')
-      .insert({
+      .upsert({
         id: orderId,
         order_number: orderNumber,
         user_id: input.userId,
@@ -100,9 +105,10 @@ export async function createOrderInDb(input: CreateOrderInput): Promise<{ succes
         discount: input.discount.toFixed(2),
         shipping_fee: input.shippingFee.toFixed(2),
         total_amount: input.totalAmount.toFixed(2),
-        payment_status: 'SUCCESS',
-        order_status: 'CONFIRMED',
+        payment_status: (input.paymentStatus || 'SUCCESS').toUpperCase(),
+        order_status: orderStatus,
         notes: input.notes || null,
+        updated_at: new Date().toISOString(),
       });
 
     if (orderError) {
@@ -141,7 +147,7 @@ export async function createOrderInDb(input: CreateOrderInput): Promise<{ succes
         id: `pay_${orderId}`,
         order_id: orderId,
         amount: input.totalAmount.toFixed(2),
-        status: 'SUCCESS',
+        status: (input.paymentStatus || 'SUCCESS').toUpperCase(),
         payment_method: input.paymentMethod || 'Online (Simulated)',
       });
 
@@ -208,3 +214,69 @@ export async function updateOrderStatusInDb(id: string, status: OrderStatus): Pr
     return false;
   }
 }
+
+export async function confirmOrderPayment(
+  orderId: string, 
+  paymentDetails?: { paymentId?: string; method?: string; amount?: number }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = createClient();
+
+    // 1. Update order status and payment status
+    const { error: orderError } = await supabase
+      .from('orders')
+      .update({
+        payment_status: 'SUCCESS',
+        order_status: 'CONFIRMED',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', orderId);
+
+    if (orderError) {
+      console.error('Error confirming order payment in DB:', orderError);
+      return { success: false, error: orderError.message };
+    }
+
+    // 2. Insert or update payment record
+    const payId = paymentDetails?.paymentId || `pay_${orderId}`;
+    const { error: payError } = await supabase
+      .from('payments')
+      .upsert({
+        id: payId,
+        order_id: orderId,
+        amount: paymentDetails?.amount ? paymentDetails.amount.toFixed(2) : undefined,
+        status: 'SUCCESS',
+        payment_method: paymentDetails?.method || 'Cashfree Online',
+        updated_at: new Date().toISOString(),
+      });
+
+    if (payError) {
+      console.error('Error upserting payment row:', payError);
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('confirmOrderPayment fatal error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function markOrderFailed(orderId: string, reason?: string): Promise<boolean> {
+  try {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('orders')
+      .update({
+        payment_status: 'FAILED',
+        notes: reason ? `Payment failed: ${reason}` : 'Payment failed',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', orderId);
+
+    return !error;
+  } catch (err) {
+    console.error('markOrderFailed error:', err);
+    return false;
+  }
+}
+

@@ -1,66 +1,94 @@
 import Link from 'next/link';
-import { ArrowRight, Truck, Shield, RotateCcw, Star } from 'lucide-react';
-import { Container, SectionHeading, Button } from '@/components/ui';
+import { ArrowRight, Truck, Shield, RotateCcw, Star, CheckCircle, Sparkles } from 'lucide-react';
+import { Container, Button } from '@/components/ui';
 import { getProducts } from '@/lib/services/products';
 import { getCategories } from '@/lib/services/categories';
+import { 
+  getSetting, 
+  HeroBannerSettings, 
+  DEFAULT_HERO_BANNER,
+  PromoDropBannerSettings,
+  DEFAULT_PROMO_BANNER,
+  WhyAuraSettings,
+  DEFAULT_WHY_AURA,
+  CommunitySectionSettings,
+  DEFAULT_COMMUNITY,
+  HomePageSectionsSettings,
+  DEFAULT_HOMEPAGE_SECTIONS
+} from '@/lib/services/settings';
 import { ProductCard } from '@/components/product';
 
-export default async function HomePage() {
-  const [featuredProducts, categories] = await Promise.all([
-    getProducts({ isFeatured: true, limit: 4 }),
-    getCategories()
-  ]);
+function InstagramIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+    </svg>
+  );
+}
 
-  const instagramFeed = [
-    'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=600&q=80',
-  ];
+const FEATURE_ICONS = [Star, Truck, RotateCcw, Shield];
+
+export default async function HomePage() {
+  const [
+    featuredProducts, 
+    categories, 
+    heroBanner,
+    promoBanner,
+    whyAura,
+    community,
+    pageSections
+  ] = await Promise.all([
+    getProducts({ isFeatured: true, limit: 4 }),
+    getCategories(),
+    getSetting<HeroBannerSettings>('hero_banner', DEFAULT_HERO_BANNER),
+    getSetting<PromoDropBannerSettings>('promo_banner', DEFAULT_PROMO_BANNER),
+    getSetting<WhyAuraSettings>('why_aura', DEFAULT_WHY_AURA),
+    getSetting<CommunitySectionSettings>('community_reviews', DEFAULT_COMMUNITY),
+    getSetting<HomePageSectionsSettings>('homepage_sections', DEFAULT_HOMEPAGE_SECTIONS),
+  ]);
 
   return (
     <>
-      {/* Hero Section */}
+      {/* 1. HERO SECTION - High-Impact & Configurable */}
       <section className="relative bg-black text-white overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center opacity-40 transition-transform duration-1000 scale-105"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=1920&q=80')" }}
+          style={{ backgroundImage: `url('${heroBanner.imageUrl || DEFAULT_HERO_BANNER.imageUrl}')` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
         
-        <Container className="relative py-28 md:py-40 lg:py-52">
-          <div className="mx-auto max-w-4xl text-center animate-fade-in-up">
-            <span className="inline-block px-4 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 text-xs md:text-sm font-bold uppercase tracking-[0.3em] text-white mb-6">
-              New Drop 2025
+        <Container className="relative py-12 sm:py-16 md:py-20">
+          <div className="mx-auto max-w-3xl text-center animate-fade-in-up">
+            <span className="inline-block px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 text-[10px] md:text-xs font-bold uppercase tracking-[0.25em] text-white mb-3">
+              {heroBanner.badge || 'New Drop 2026'}
             </span>
-            <h1 className="text-5xl font-black uppercase tracking-tight sm:text-6xl md:text-7xl lg:text-8xl leading-none">
-              Redefine
-              <br />
-              Your Style
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-none text-white">
+              {(heroBanner.title || 'Redefine\nYour Style').split('\n').map((line, idx) => (
+                <span key={idx}>
+                  {line}
+                  {idx < (heroBanner.title || '').split('\n').length - 1 && <br />}
+                </span>
+              ))}
             </h1>
-            <p className="mt-6 text-lg md:text-2xl text-white/85 max-w-2xl mx-auto font-normal leading-relaxed">
-              Premium heavyweight streetwear engineered for those who dare to stand out. Bold. Modern. Minimal.
+            <p className="mt-3.5 text-xs sm:text-sm md:text-base text-white/80 max-w-lg mx-auto font-normal leading-relaxed">
+              {heroBanner.subtitle || DEFAULT_HERO_BANNER.subtitle}
             </p>
-            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link href="/shop">
+            <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link href={heroBanner.primaryBtnLink || '/shop'}>
                 <Button
                   variant="secondary"
-                  size="lg"
-                  className="min-w-[220px] h-14 text-sm md:text-base font-extrabold uppercase tracking-wider"
+                  className="min-w-[170px] h-10 text-xs md:text-sm font-black uppercase tracking-wider"
                 >
-                  Shop Now
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  {heroBanner.primaryBtnText || 'Shop Now'}
+                  <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                 </Button>
               </Link>
-              <Link href="/collections">
+              <Link href={heroBanner.secondaryBtnLink || '/collections'}>
                 <Button
                   variant="outline-white"
-                  size="lg"
-                  className="min-w-[220px] h-14 text-sm md:text-base font-extrabold uppercase tracking-wider border-2"
+                  className="min-w-[170px] h-10 text-xs md:text-sm font-black uppercase tracking-wider border-2"
                 >
-                  View Collections
+                  {heroBanner.secondaryBtnText || 'View Collections'}
                 </Button>
               </Link>
             </div>
@@ -68,192 +96,239 @@ export default async function HomePage() {
         </Container>
       </section>
 
-      {/* Featured Categories */}
-      <section className="bg-white py-20 md:py-28">
-        <Container>
-          <SectionHeading
-            title="Shop by Category"
-            subtitle="Explore our curated drops and distinct silhouettes"
-          />
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {categories.slice(0, 3).map((category) => (
-              <Link
-                key={category.slug}
-                href={`/category/${category.slug}`}
-                className="group relative flex aspect-[3/4] flex-col justify-end overflow-hidden bg-black p-8 transition-all duration-300 hover:scale-[1.02] sm:aspect-[4/5] img-hover-zoom card-hover shadow-lg"
-              >
-                {/* Background image */}
-                <div 
-                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-105 opacity-75"
-                  style={{ backgroundImage: `url(${category.image_url || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80'})` }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
-                
-                <div className="relative z-10">
-                  <h3 className="text-2xl font-black uppercase tracking-wide text-white md:text-3xl">
-                    {category.name}
-                  </h3>
-                  <p className="mt-2 text-sm md:text-base text-white/85 leading-snug">
-                    {category.description}
-                  </p>
-                  <span className="mt-4 inline-flex items-center text-xs md:text-sm font-bold uppercase tracking-widest text-white group-hover:underline">
-                    Explore Drop
-                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </div>
+      {/* 2. SHOP BY CATEGORY */}
+      {pageSections.showCategories && categories.length > 0 && (
+        <section className="bg-white py-8 md:py-12 border-b border-border">
+          <Container>
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-5 pb-2.5 border-b border-border gap-2">
+              <div>
+                <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-gray">
+                  {pageSections.categoriesTag || 'Explore Silhouettes'}
+                </span>
+                <h2 className="text-xl md:text-2xl font-black uppercase tracking-wide text-black mt-0.5">
+                  {pageSections.categoriesTitle || 'Shop by Category'}
+                </h2>
+              </div>
+              <Link href="/shop" className="text-xs font-bold text-black uppercase tracking-wider hover:underline flex items-center gap-1">
+                All Drops <ArrowRight size={13} />
               </Link>
-            ))}
-          </div>
-        </Container>
-      </section>
+            </div>
 
-      {/* Featured Products */}
-      <section className="bg-off-white py-20 md:py-28 border-y border-border">
-        <Container>
-          <SectionHeading
-            title="Featured Collection"
-            subtitle="Handpicked heavyweight styles for the bold"
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {categories.map((category) => (
+                <Link
+                  key={category.slug}
+                  href={`/category/${category.slug}`}
+                  className="group relative flex aspect-[16/10] sm:aspect-[4/3] flex-col justify-end overflow-hidden bg-black p-5 transition-all duration-300 hover:scale-[1.01] border border-border"
+                >
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-105 opacity-80"
+                    style={{ backgroundImage: `url(${category.image_url || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80'})` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                  
+                  <div className="relative z-10 flex items-end justify-between">
+                    <div>
+                      <h3 className="text-base md:text-lg font-black uppercase tracking-wider text-white">
+                        {category.name}
+                      </h3>
+                      {category.description && (
+                        <p className="mt-0.5 text-xs text-white/75 line-clamp-1 max-w-xs font-medium">
+                          {category.description}
+                        </p>
+                      )}
+                    </div>
+                    <span className="shrink-0 w-7 h-7 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white transition-transform group-hover:translate-x-1 group-hover:bg-white group-hover:text-black">
+                      <ArrowRight size={13} />
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Container>
+        </section>
+      )}
+
+      {/* 3. FEATURED PRODUCTS */}
+      {pageSections.showFeatured && featuredProducts.length > 0 && (
+        <section className="bg-off-white py-8 md:py-12 border-b border-border">
+          <Container>
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-5 pb-2.5 border-b border-border gap-2">
+              <div>
+                <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-gray">
+                  {pageSections.featuredTag || 'Handpicked Heavyweights'}
+                </span>
+                <h2 className="text-xl md:text-2xl font-black uppercase tracking-wide text-black mt-0.5">
+                  {pageSections.featuredTitle || 'Featured Collection'}
+                </h2>
+              </div>
+              <Link href="/shop" className="text-xs font-bold text-black uppercase tracking-wider hover:underline flex items-center gap-1">
+                View Catalog <ArrowRight size={13} />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 animate-stagger">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </Container>
+        </section>
+      )}
+
+      {/* 4. DYNAMIC PROMO DROP BANNER */}
+      {promoBanner.isEnabled && (
+        <section className="bg-black text-white py-8 md:py-12 border-b border-white/10 relative overflow-hidden">
+          <div 
+            className="absolute inset-0 bg-cover bg-center opacity-20"
+            style={{ backgroundImage: `url('${promoBanner.imageUrl || DEFAULT_PROMO_BANNER.imageUrl}')` }}
           />
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 animate-stagger">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-          <div className="mt-12 text-center">
-            <Link href="/shop">
-              <Button variant="outline" size="lg" className="h-14 px-10 text-sm md:text-base font-bold uppercase tracking-wider border-2 border-black hover:bg-black hover:text-white">
-                View All Products
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-          </div>
-        </Container>
-      </section>
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 to-black/70" />
 
-      {/* Promotional Banner */}
-      <section className="relative bg-black py-24 text-white md:py-32 overflow-hidden">
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-30"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=1920&q=80')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 to-black/40" />
-        
-        <Container className="relative">
-          <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-block px-4 py-1.5 bg-white/10 border border-white/20 text-xs md:text-sm font-bold uppercase tracking-[0.3em] text-white/80 mb-4">
-              Limited Edition Drop
+          <Container className="relative">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+              {/* Left Column: Headline & CTA */}
+              <div className="lg:col-span-7 space-y-3.5">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-white/10 border border-white/20 text-[10px] font-bold uppercase tracking-[0.2em] text-white">
+                  <Sparkles size={11} />
+                  {promoBanner.badge || 'Limited Edition Drop'}
+                </div>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
+                  {promoBanner.title || 'Drop 01 — Now Available'}
+                </h2>
+                <p className="text-xs sm:text-sm text-white/80 max-w-xl leading-relaxed">
+                  {promoBanner.subtitle || DEFAULT_PROMO_BANNER.subtitle}
+                </p>
+                <div className="pt-1.5">
+                  <Link href={promoBanner.buttonLink || '/shop'}>
+                    <Button
+                      variant="secondary"
+                      className="h-10 px-6 text-xs font-black uppercase tracking-widest"
+                    >
+                      {promoBanner.buttonText || 'Shop The Drop'}
+                      <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Right Column: Technical Specification Badges */}
+              <div className="lg:col-span-5 grid grid-cols-2 gap-2.5">
+                {(promoBanner.specs || DEFAULT_PROMO_BANNER.specs).map((spec, idx) => (
+                  <div key={idx} className="bg-white/5 border border-white/15 p-3 backdrop-blur-sm">
+                    <p className="font-black text-xs md:text-sm text-white uppercase tracking-wider">{spec.title}</p>
+                    <p className="text-[10px] md:text-[11px] text-white/60 mt-0.5">{spec.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Container>
+        </section>
+      )}
+
+      {/* 5. VALUE PROPOSITION ("Why AURA OUTLET") */}
+      <section className="bg-white py-8 md:py-12 border-b border-border">
+        <Container>
+          <div className="text-center max-w-xl mx-auto mb-6">
+            <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.25em] text-gray">
+              {whyAura.tag || 'Quality Meets Style'}
             </span>
-            <h2 className="mt-4 text-4xl font-black uppercase tracking-tight md:text-6xl">
-              Drop 01 — Now Available
+            <h2 className="text-xl md:text-2xl font-black uppercase tracking-wide text-black mt-0.5">
+              {whyAura.title || 'Why AURA OUTLET'}
             </h2>
-            <p className="mt-6 text-base md:text-xl text-white/80 max-w-xl mx-auto leading-relaxed">
-              Exclusive 240+ GSM dense cotton heavyweights. Limited quantities produced. Once sold out, never restocked.
-            </p>
-            <div className="mt-10">
-              <Link href="/shop">
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  className="h-14 px-10 text-sm md:text-base font-extrabold uppercase tracking-wider"
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {(whyAura.features || DEFAULT_WHY_AURA.features).map((feature, idx) => {
+              const Icon = FEATURE_ICONS[idx % FEATURE_ICONS.length];
+              return (
+                <div 
+                  key={idx} 
+                  className="p-3.5 sm:p-4 border border-border bg-off-white/30 flex flex-col items-center text-center justify-between"
                 >
-                  Shop The Drop
-                </Button>
-              </Link>
-            </div>
+                  <div className="flex h-9 w-9 items-center justify-center bg-black text-white mb-2.5">
+                    <Icon className="h-4.5 w-4.5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-black mb-1">
+                      {feature.title}
+                    </h3>
+                    <p className="text-[11px] text-gray leading-relaxed">
+                      {feature.desc}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </Container>
       </section>
 
-      {/* Why Aura Outlet - High Impact Value Proposition */}
-      <section className="bg-white py-20 md:py-28">
+      {/* 6. CUSTOMER REVIEWS & COMMUNITY FIT CHECK */}
+      <section className="bg-off-white py-10 md:py-14">
         <Container>
-          <SectionHeading
-            title="Why AURA OUTLET"
-            subtitle="Quality meets style"
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-            {[
-              {
-                icon: Star,
-                title: 'Premium Quality',
-                description: '240+ GSM combed heavyweight cotton for lasting comfort and structural drape',
-              },
-              {
-                icon: Truck,
-                title: 'Free Shipping',
-                description: 'Free expedited delivery on all orders above ₹999 across India',
-              },
-              {
-                icon: RotateCcw,
-                title: 'Easy Returns',
-                description: '7-day hassle-free doorstep returns and quick size exchanges',
-              },
-              {
-                icon: Shield,
-                title: 'Secure Payments',
-                description: '100% encrypted and verified payments powered by Cashfree Gateway',
-              },
-            ].map((feature) => (
+          <div className="text-center max-w-xl mx-auto mb-6">
+            <div className="inline-flex items-center gap-1.5 text-[10px] md:text-[11px] font-bold uppercase tracking-[0.25em] text-gray mb-1">
+              <InstagramIcon className="w-3.5 h-3.5 text-black" />
+              <span>{community.tag || '@aura.outlet._ • Fit Check'}</span>
+            </div>
+            <h2 className="text-xl md:text-2xl lg:text-3xl font-black uppercase tracking-tight text-black">
+              {community.title || 'What Our Community Says'}
+            </h2>
+            <p className="mt-1 text-xs md:text-sm text-gray">
+              {community.subtitle || 'Real fits. Real verified reviews. Tag us in your fits #AuraOutlet and get featured.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+            {(community.reviews || DEFAULT_COMMUNITY.reviews).map((rev) => (
               <div 
-                key={feature.title} 
-                className="text-center card-hover p-8 border border-border bg-off-white/30 hover:border-black hover:bg-white transition-all flex flex-col items-center justify-between"
+                key={rev.id} 
+                className="bg-white border border-border p-4.5 flex flex-col justify-between shadow-sm hover:border-black transition-colors"
               >
-                <div className="flex h-16 w-16 items-center justify-center bg-black text-white rounded-none shadow-md mb-6">
-                  <feature.icon className="h-8 w-8 text-white" />
-                </div>
                 <div>
-                  <h3 className="text-lg md:text-xl font-extrabold uppercase tracking-wider text-black mb-3">
-                    {feature.title}
-                  </h3>
-                  <p className="text-sm md:text-base text-gray leading-relaxed font-normal">
-                    {feature.description}
+                  {/* Star Rating */}
+                  <div className="flex items-center gap-1 mb-2.5">
+                    {[...Array(rev.rating || 5)].map((_, i) => (
+                      <Star key={i} size={13} className="fill-black text-black" />
+                    ))}
+                    <span className="ml-1 text-[10px] font-bold text-black">{Number(rev.rating || 5).toFixed(1)}</span>
+                  </div>
+
+                  {/* Review Text */}
+                  <p className="text-xs text-black/85 leading-relaxed italic mb-3 font-normal">
+                    &ldquo;{rev.review}&rdquo;
                   </p>
+                </div>
+
+                {/* Reviewer Details */}
+                <div className="pt-2.5 border-t border-border/70 flex items-center justify-between text-xs">
+                  <div>
+                    <div className="flex items-center gap-1 font-bold text-black uppercase tracking-wider text-[11px]">
+                      <span>{rev.name}</span>
+                      {rev.verified && <CheckCircle size={12} className="text-black" />}
+                    </div>
+                    <span className="text-[10px] text-gray uppercase tracking-widest">{rev.city}</span>
+                  </div>
+                  {rev.fit && (
+                    <span className="text-[10px] font-semibold bg-off-white px-2 py-0.5 border border-border text-black">
+                      {rev.fit}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
           </div>
-        </Container>
-      </section>
 
-      {/* Instagram Lookbook Section */}
-      <section className="bg-off-white py-20 md:py-28 border-t border-border">
-        <Container>
-          <div className="text-center mb-12">
+          <div className="mt-6 text-center">
             <a 
-              href="https://www.instagram.com/aura.outlet._/" 
+              href={community.instagramUrl || 'https://www.instagram.com/aura.outlet._/'} 
               target="_blank" 
-              rel="noopener noreferrer" 
-              className="inline-block text-xs md:text-sm font-bold uppercase tracking-[0.3em] text-gray hover:text-black transition-colors mb-2"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-black hover:underline"
             >
-              @aura.outlet._
+              <InstagramIcon className="w-3.5 h-3.5 text-black" />
+              Follow {community.instagramHandle || '@aura.outlet._'} on Instagram
             </a>
-            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight text-black">
-              Follow Us on Instagram
-            </h2>
-            <p className="mt-3 text-base md:text-lg text-gray">
-              Tag us in your fits <strong className="text-black">#AuraOutlet</strong> and get featured
-            </p>
-          </div>
-          {/* Instagram Lookbook grid with real photos */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6 animate-stagger">
-            {instagramFeed.map((imgUrl, i) => (
-              <a 
-                key={i} 
-                href="https://www.instagram.com/aura.outlet._/" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="group relative aspect-square overflow-hidden bg-black block shadow-md"
-              >
-                <img 
-                  src={imgUrl} 
-                  alt={`Aura Lookbook ${i + 1}`} 
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-100" 
-                />
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs md:text-sm font-extrabold uppercase tracking-widest">
-                  View Fit
-                </div>
-              </a>
-            ))}
           </div>
         </Container>
       </section>

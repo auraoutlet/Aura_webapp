@@ -14,14 +14,26 @@ import {
 import { Container } from '@/components/ui';
 import { NAV_LINKS } from '@/lib/constants';
 import { useCartStore, useWishlistStore, useHydration } from '@/lib/store';
+import { getSetting, AnnouncementBarSettings, DEFAULT_ANNOUNCEMENT_BAR } from '@/lib/services/settings';
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [announcement, setAnnouncement] = useState('FREE SHIPPING ON ORDERS ABOVE ₹999');
+  const [showAnnouncement, setShowAnnouncement] = useState(true);
   const pathname = usePathname();
   const cartItemCount = useCartStore((s) => s.getItemCount());
   const wishlistItems = useWishlistStore((s) => s.items);
   const isHydrated = useHydration();
+
+  useEffect(() => {
+    getSetting<AnnouncementBarSettings>('announcement_bar', DEFAULT_ANNOUNCEMENT_BAR).then((data) => {
+      if (data) {
+        setShowAnnouncement(data.isEnabled ?? true);
+        if (data.text) setAnnouncement(data.text);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -56,19 +68,21 @@ export function Navbar() {
         }`}
       >
         {/* Announcement Bar */}
-        <div className="bg-black py-2.5 text-center text-xs md:text-sm font-bold tracking-[0.25em] text-white">
-          FREE SHIPPING ON ORDERS ABOVE ₹999
-        </div>
+        {showAnnouncement && (
+          <div className="bg-black py-1.5 text-center text-[10px] sm:text-xs font-bold tracking-[0.2em] text-white">
+            {announcement}
+          </div>
+        )}
 
         <Container>
-          <nav className="flex h-16 items-center justify-between gap-4 md:h-24">
+          <nav className="flex h-14 md:h-16 items-center justify-between gap-4">
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="flex items-center justify-center p-2 text-black transition-colors hover:opacity-70 lg:hidden"
+              className="flex items-center justify-center p-1.5 text-black transition-colors hover:opacity-70 lg:hidden"
               aria-label="Open menu"
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5" />
             </button>
 
             {/* Logo */}
@@ -76,16 +90,16 @@ export function Navbar() {
               href="/"
               className="flex items-center py-1"
             >
-              <img src="/logo-black.png" alt="AURA OUTLET" className="h-10 md:h-12 lg:h-14 w-auto object-contain transition-transform hover:scale-105" />
+              <img src="/logo-black.png" alt="AURA OUTLET" className="h-7 sm:h-8 md:h-9 w-auto object-contain transition-transform hover:scale-105" />
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden items-center gap-9 lg:flex">
+            <div className="hidden items-center gap-7 lg:flex">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.label}
                   href={link.href}
-                  className={`text-sm font-bold uppercase tracking-[0.18em] transition-colors hover:text-black py-2 ${
+                  className={`text-xs font-bold uppercase tracking-[0.16em] transition-colors hover:text-black py-1.5 ${
                     pathname === link.href
                       ? 'text-black border-b-2 border-black'
                       : 'text-gray'
@@ -97,44 +111,44 @@ export function Navbar() {
             </div>
 
             {/* Right Actions */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1 sm:gap-2">
               <Link
                 href="/search"
-                className="flex items-center justify-center p-2 text-black transition-colors hover:opacity-70"
+                className="flex items-center justify-center p-1.5 text-black transition-colors hover:opacity-70"
                 aria-label="Search"
               >
-                <Search className="h-5 w-5 md:h-6 md:w-6" />
+                <Search className="h-4.5 w-4.5 md:h-5 md:w-5" />
               </Link>
               <Link
                 href="/account/wishlist"
-                className="relative hidden items-center justify-center p-2 text-black transition-colors hover:opacity-70 sm:flex"
+                className="relative hidden items-center justify-center p-1.5 text-black transition-colors hover:opacity-70 sm:flex"
                 aria-label="Wishlist"
               >
-                <Heart className="h-5 w-5 md:h-6 md:w-6" />
+                <Heart className="h-4.5 w-4.5 md:h-5 md:w-5" />
                 {isHydrated && wishlistItems.length > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 min-w-[20px] items-center justify-center bg-black text-[11px] font-extrabold text-white rounded-full border-2 border-white">
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 min-w-[16px] items-center justify-center bg-black text-[10px] font-extrabold text-white rounded-full border border-white">
                     {wishlistItems.length > 9 ? '9+' : wishlistItems.length}
                   </span>
                 )}
               </Link>
               <Link
                 href="/cart"
-                className="relative flex items-center justify-center p-2 text-black transition-colors hover:opacity-70"
+                className="relative flex items-center justify-center p-1.5 text-black transition-colors hover:opacity-70"
                 aria-label="Cart"
               >
-                <ShoppingBag className="h-5 w-5 md:h-6 md:w-6" />
+                <ShoppingBag className="h-4.5 w-4.5 md:h-5 md:w-5" />
                 {isHydrated && cartItemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 min-w-[20px] items-center justify-center bg-black text-[11px] font-extrabold text-white rounded-full border-2 border-white">
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 min-w-[16px] items-center justify-center bg-black text-[10px] font-extrabold text-white rounded-full border border-white">
                     {cartItemCount > 9 ? '9+' : cartItemCount}
                   </span>
                 )}
               </Link>
               <Link
                 href="/account"
-                className="hidden items-center justify-center p-2 text-black transition-colors hover:opacity-70 sm:flex"
+                className="hidden items-center justify-center p-1.5 text-black transition-colors hover:opacity-70 sm:flex"
                 aria-label="Account"
               >
-                <User className="h-5 w-5 md:h-6 md:w-6" />
+                <User className="h-4.5 w-4.5 md:h-5 md:w-5" />
               </Link>
             </div>
           </nav>
