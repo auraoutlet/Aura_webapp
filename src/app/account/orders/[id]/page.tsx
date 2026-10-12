@@ -102,21 +102,65 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         <h3 className="font-bold uppercase tracking-wider text-sm border-b border-border pb-2">Items</h3>
         <div className="flex flex-col gap-6">
           {(order.items || []).map((item) => {
+            const product = item.product;
+            const imageUrl = product?.images?.[0]?.image_url;
+            const productSlug = product?.slug;
+
             return (
-              <div key={item.id} className="flex gap-4 items-start">
-                <div className="w-20 h-24 bg-off-white flex-shrink-0 flex items-center justify-center border border-border">
-                  <span className="text-[10px] uppercase font-bold text-gray">ITEM</span>
+              <div key={item.id} className="flex gap-4 items-start pb-6 border-b border-border last:border-b-0">
+                {/* Product Image */}
+                <div className="w-20 h-24 bg-off-white flex-shrink-0 flex items-center justify-center border border-border overflow-hidden relative">
+                  {imageUrl ? (
+                    productSlug ? (
+                      <Link href={`/products/${productSlug}`} className="w-full h-full block">
+                        <img 
+                          src={imageUrl} 
+                          alt={item.product_name || 'AURA OUTLET Item'} 
+                          className="w-full h-full object-cover transition-transform hover:scale-105" 
+                        />
+                      </Link>
+                    ) : (
+                      <img 
+                        src={imageUrl} 
+                        alt={item.product_name || 'AURA OUTLET Item'} 
+                        className="w-full h-full object-cover" 
+                      />
+                    )
+                  ) : (
+                    <span className="text-[10px] uppercase font-bold text-gray tracking-wider">AURA</span>
+                  )}
                 </div>
+
+                {/* Details */}
                 <div className="flex-1 flex flex-col gap-1">
-                  <div className="font-bold text-black">
-                    {item.product_name || 'AURA OUTLET Item'}
-                  </div>
-                  <div className="text-sm text-gray flex gap-4">
+                  {productSlug ? (
+                    <Link 
+                      href={`/products/${productSlug}`}
+                      className="font-bold text-black hover:underline transition-all text-sm sm:text-base line-clamp-1"
+                    >
+                      {item.product_name || 'AURA OUTLET Item'}
+                    </Link>
+                  ) : (
+                    <div className="font-bold text-black text-sm sm:text-base">
+                      {item.product_name || 'AURA OUTLET Item'}
+                    </div>
+                  )}
+
+                  <div className="text-xs sm:text-sm text-gray flex flex-wrap gap-x-4 gap-y-1">
                     {item.color && <span>Color: <strong className="text-black">{item.color}</strong></span>}
                     {item.size && <span>Size: <strong className="text-black">{item.size}</strong></span>}
+                    <span>Qty: <strong className="text-black">{item.quantity}</strong></span>
                   </div>
-                  <div className="text-sm">Qty: <strong className="text-black">{item.quantity}</strong></div>
-                  <div className="pt-2">
+
+                  <div className="pt-2 flex items-center gap-3">
+                    {productSlug && (
+                      <Link 
+                        href={`/products/${productSlug}`}
+                        className="text-[11px] font-bold uppercase tracking-wider text-black underline underline-offset-4 hover:opacity-75"
+                      >
+                        View Product →
+                      </Link>
+                    )}
                     <OrderItemReviewModal 
                       productId={item.product?.slug || item.product_id || item.id}
                       productName={item.product_name || 'Aura Apparel'}
@@ -124,7 +168,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     />
                   </div>
                 </div>
-                <div className="font-bold text-base text-black">
+
+                <div className="font-bold text-sm sm:text-base text-black whitespace-nowrap">
                   {formatPrice(item.total_price)}
                 </div>
               </div>

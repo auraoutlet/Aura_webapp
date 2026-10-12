@@ -41,7 +41,7 @@ export default function OrdersPage() {
             .from('orders')
             .select(`
               *,
-              items:order_items(*)
+              items:order_items(*, product:products(*, images:product_images(*)))
             `)
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
@@ -98,6 +98,27 @@ export default function OrdersPage() {
                     <span>•</span>
                     <span className="font-semibold text-black">{formatPrice(order.total_amount)}</span>
                   </div>
+
+                  {/* Item Thumbnails Preview */}
+                  {order.items && order.items.length > 0 && (
+                    <div className="flex items-center gap-2 pt-2">
+                      {order.items.slice(0, 4).map((it: any) => {
+                        const img = it.product?.images?.[0]?.image_url;
+                        return (
+                          <div key={it.id} className="w-10 h-12 bg-off-white border border-border overflow-hidden shrink-0 flex items-center justify-center" title={it.product_name}>
+                            {img ? (
+                              <img src={img} alt={it.product_name} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[8px] font-bold text-gray uppercase">AO</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {order.items.length > 4 && (
+                        <span className="text-[10px] text-gray font-bold">+{order.items.length - 4} more</span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">

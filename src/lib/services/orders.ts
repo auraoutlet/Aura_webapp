@@ -37,7 +37,7 @@ export async function getAllOrders(): Promise<Order[]> {
       .select(`
         *,
         address:addresses(*),
-        items:order_items(*)
+        items:order_items(*, product:products(*, images:product_images(*)))
       `)
       .order('created_at', { ascending: false });
 
@@ -62,7 +62,7 @@ export async function getOrderById(id: string): Promise<Order | null> {
       .select(`
         *,
         address:addresses(*),
-        items:order_items(*, product:products(*)),
+        items:order_items(*, product:products(*, images:product_images(*))),
         payment:payments(*)
       `);
 

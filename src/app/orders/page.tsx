@@ -292,24 +292,52 @@ function TrackOrderContent() {
                 Items In This Order ({order.items?.length || 0})
               </h4>
               <div className="divide-y divide-border">
-                {(order.items || []).map((item) => (
-                  <div key={item.id} className="py-3 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-14 bg-off-white border border-border flex items-center justify-center font-bold text-[10px] text-gray uppercase shrink-0">
-                        AO
+                {(order.items || []).map((item) => {
+                  const product = item.product;
+                  const imageUrl = product?.images?.[0]?.image_url;
+                  const productSlug = product?.slug;
+
+                  return (
+                    <div key={item.id} className="py-3 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-14 bg-off-white border border-border flex items-center justify-center font-bold text-[10px] text-gray uppercase shrink-0 overflow-hidden">
+                          {imageUrl ? (
+                            <img src={imageUrl} alt={item.product_name} className="w-full h-full object-cover" />
+                          ) : (
+                            'AO'
+                          )}
+                        </div>
+                        <div>
+                          {productSlug ? (
+                            <Link 
+                              href={`/products/${productSlug}`} 
+                              className="text-xs md:text-sm font-bold text-black hover:underline"
+                            >
+                              {item.product_name}
+                            </Link>
+                          ) : (
+                            <p className="text-xs md:text-sm font-bold text-black">{item.product_name}</p>
+                          )}
+                          <p className="text-[11px] text-gray">
+                            {item.color && <>Color: <strong className="text-black">{item.color}</strong> • </>}
+                            Size: <strong className="text-black">{item.size}</strong> • Qty: <strong className="text-black">{item.quantity}</strong>
+                          </p>
+                          {productSlug && (
+                            <Link 
+                              href={`/products/${productSlug}`} 
+                              className="text-[10px] font-bold uppercase tracking-wider text-black underline underline-offset-2 hover:opacity-75 inline-block mt-0.5"
+                            >
+                              View Product →
+                            </Link>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs md:text-sm font-bold text-black">{item.product_name}</p>
-                        <p className="text-[11px] text-gray">
-                          Size: <strong className="text-black">{item.size}</strong> • Qty: <strong className="text-black">{item.quantity}</strong>
-                        </p>
-                      </div>
+                      <span className="text-xs md:text-sm font-bold text-black shrink-0">
+                        {formatPrice(item.total_price)}
+                      </span>
                     </div>
-                    <span className="text-xs md:text-sm font-bold text-black shrink-0">
-                      {formatPrice(item.total_price)}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
