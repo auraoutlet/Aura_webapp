@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { confirmOrderPayment, markOrderFailed } from '@/lib/services/orders';
+import { confirmOrderPayment, markOrderFailed, rollbackPendingOrder } from '@/lib/services/orders';
 
 export async function POST(req: NextRequest) {
   try {
@@ -56,9 +56,9 @@ export async function POST(req: NextRequest) {
       });
 
       console.log(`Order ${orderId} successfully confirmed via Cashfree webhook with transaction ${paymentData?.cf_payment_id}`);
-    } else if (eventType === 'PAYMENT_FAILED_WEBHOOK' || paymentData?.payment_status === 'FAILED') {
-      await markOrderFailed(orderId, paymentData?.payment_message || 'Payment marked failed by Cashfree');
-      console.log(`Order ${orderId} marked failed via Cashfree webhook`);
+    } else if (eventType === 'PAYMENT_FAILED_WEBHOOK' || paymentData?.payment_status === 'FAILED' || paymentData?.payment_status === 'CANCELLED') {
+      await rollbackPendingOrder(orderId);
+      console.log(`Order ${orderId} rolled back via Cashfree webhook due to payment failure`);
     }
 
     return NextResponse.json({ status: 'SUCCESS' }, { status: 200 });

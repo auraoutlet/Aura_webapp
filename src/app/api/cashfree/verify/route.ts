@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { confirmOrderPayment, getOrderById, markOrderFailed } from '@/lib/services/orders';
+import { confirmOrderPayment, getOrderById, markOrderFailed, rollbackPendingOrder } from '@/lib/services/orders';
 
 export async function POST(request: Request) {
   try {
@@ -93,9 +93,10 @@ export async function POST(request: Request) {
         status: 'SUCCESS',
         rawResponse: data,
       });
-    } else if (data.order_status === 'FAILED') {
+    } else if (data.order_status === 'FAILED' || data.order_status === 'USER_DROPPED' || data.order_status === 'CANCELLED') {
       status = 'FAILED';
-      await markOrderFailed(orderId, 'Cashfree marked order as failed');
+      // Rollback uncompleted order so invalid/failed orders do not clutter the database or customer orders list
+      await rollbackPendingOrder(orderId);
     }
 
     // Retrieve order number for the success page

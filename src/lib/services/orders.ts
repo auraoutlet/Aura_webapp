@@ -338,3 +338,38 @@ export async function markOrderFailed(orderId: string, reason?: string): Promise
   }
 }
 
+export async function rollbackPendingOrder(orderId: string): Promise<boolean> {
+  try {
+    const supabase = createClient();
+    
+    // First remove associated items and payments
+    await supabase.from('order_items').delete().eq('order_id', orderId);
+    await supabase.from('payments').delete().eq('order_id', orderId);
+    
+    // Delete the pending/failed order from orders table
+    const { error } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', orderId)
+      .in('payment_status', ['PENDING', 'FAILED']);
+
+    if (error) {
+      console.warn('Could not hard delete pending order, marking as CANCELLED/FAILED:', error);
+      await supabase
+        .from('orders')
+        .update({
+          payment_status: 'FAILED',
+          order_status: 'CANCELLED',
+          notes: 'Transaction failed or abandoned by user',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', orderId);
+    }
+
+    return true;
+  } catch (err) {
+    console.error('rollbackPendingOrder error:', err);
+    return false;
+  }
+}
+

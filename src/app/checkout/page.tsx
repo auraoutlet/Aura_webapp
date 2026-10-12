@@ -34,7 +34,7 @@ export default function CheckoutPage() {
   const [addressError, setAddressError] = useState('');
 
   // Payment method
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'upi' | 'cod'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card'>('upi');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [orderError, setOrderError] = useState('');
   
@@ -249,40 +249,18 @@ export default function CheckoutPage() {
       });
 
       const paymentMethodLabel = 
-        paymentMethod === 'card' ? 'Credit / Debit Card' :
-        paymentMethod === 'upi' ? 'UPI / NetBanking' : 'Cash on Delivery';
+        paymentMethod === 'card' ? 'Credit / Debit Card' : 'UPI / NetBanking';
 
-      if (paymentMethod === 'cod') {
-        const result = await createOrderInDb({
-          userId: currentUser.id,
-          addressId: selectedAddressId,
-          subtotal,
-          discount: discountAmount,
-          shippingFee: shipping,
-          totalAmount: total,
-          items: orderItemsInput,
-          couponCode: appliedCoupon?.code,
-          paymentMethod: paymentMethodLabel,
-          paymentStatus: 'pending',
-        });
+      // Cashfree Payment Flow (Prepaid only)
+      const orderId = `ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const orderNumber = `AO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-        if (!result.success || !result.orderNumber) {
-          throw new Error(result.error || 'Failed to place order');
-        }
-
-        clearCart();
-        router.push(`/order-success?order=${encodeURIComponent(result.orderNumber)}&id=${encodeURIComponent(result.orderId!)}`);
-      } else {
-        // Cashfree Payment Flow
-        const orderId = `ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-        const orderNumber = `AO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-
-        // 1. Pre-insert order into Supabase with PENDING status
-        const dbResult = await createOrderInDb({
-          orderId,
-          orderNumber,
-          userId: currentUser.id,
-          addressId: selectedAddressId,
+      // 1. Pre-insert order into Supabase with PENDING status
+      const dbResult = await createOrderInDb({
+        orderId,
+        orderNumber,
+        userId: currentUser.id,
+        addressId: selectedAddressId,
           subtotal,
           discount: discountAmount,
           shippingFee: shipping,
@@ -337,7 +315,6 @@ export default function CheckoutPage() {
           returnUrl: `${window.location.origin}/payment/return?order_id={order_id}`,
           redirectTarget: '_self',
         });
-      }
     } catch (err: any) {
       setOrderError(err.message || 'Error occurred while placing your order. Please try again.');
       setIsPlacingOrder(false);
@@ -659,9 +636,8 @@ export default function CheckoutPage() {
                 
                 <div className="space-y-2.5">
                   {[
-                    { id: 'card', label: 'Credit / Debit Card', desc: 'Visa, MasterCard, RuPay' },
-                    { id: 'upi', label: 'UPI / Net Banking', desc: 'Google Pay, PhonePe, Paytm, QR Code' },
-                    { id: 'cod', label: 'Cash on Delivery (COD)', desc: 'Pay with cash at your doorstep' },
+                    { id: 'upi', label: 'UPI / Net Banking / QR', desc: 'Google Pay, PhonePe, Paytm, BHIM, Instant Net Banking' },
+                    { id: 'card', label: 'Credit / Debit Card', desc: 'Visa, MasterCard, RuPay, Maestro' },
                   ].map((method) => (
                     <div 
                       key={method.id}

@@ -44,6 +44,8 @@ export default function OrdersPage() {
               items:order_items(*, product:products(*, images:product_images(*)))
             `)
             .eq('user_id', user.id)
+            .neq('payment_status', 'FAILED')
+            .neq('order_status', 'CANCELLED')
             .order('created_at', { ascending: false });
 
           if (!error && data) {
