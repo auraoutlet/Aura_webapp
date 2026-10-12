@@ -298,15 +298,18 @@ export default function CheckoutPage() {
           throw new Error(data.error || 'Failed to create payment session with Cashfree');
         }
 
-        // Initialize Cashfree
+        // Initialize Cashfree using the exact environment returned by the server
         // @ts-ignore
         const CashfreeSDK = window.Cashfree;
         if (!CashfreeSDK) {
           throw new Error('Cashfree payment SDK is loading. Please try again.');
         }
 
+        const gatewayMode = data.environment || 
+          (process.env.NEXT_PUBLIC_CASHFREE_ENVIRONMENT === 'production' ? 'production' : 'sandbox');
+
         const cashfree = CashfreeSDK({
-          mode: process.env.NEXT_PUBLIC_CASHFREE_ENVIRONMENT === 'production' ? 'production' : 'sandbox',
+          mode: gatewayMode,
         });
 
         // Redirect to Cashfree Checkout

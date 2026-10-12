@@ -80,6 +80,7 @@ export async function POST(request: Request) {
       payment_session_id: data.payment_session_id,
       cf_order_id: data.cf_order_id,
       order_id: data.order_id,
+      environment: environment === 'production' ? 'production' : 'sandbox',
     });
   } catch (error: any) {
     console.error('Error creating cashfree order:', error);
