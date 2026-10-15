@@ -84,12 +84,12 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
     <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start">
       {/* Left: Product Images - Constrained Height to Prevent Viewport Overflow */}
       <div className="w-full lg:w-[46%] xl:w-[44%] shrink-0 flex flex-col gap-2.5">
-        <div className="w-full h-[320px] sm:h-[380px] lg:h-[400px] bg-off-white flex items-center justify-center relative border border-border overflow-hidden">
+        <div className="w-full h-[440px] sm:h-[520px] lg:h-[560px] bg-off-white flex items-center justify-center relative border border-border rounded-lg overflow-hidden">
           {selectedImage ? (
             <img 
               src={selectedImage} 
               alt={product.name} 
-              className="w-full h-full object-cover transition-all duration-300" 
+              className="w-full h-full object-contain transition-all duration-300 p-1" 
             />
           ) : (
             <div className="flex flex-col items-center justify-center p-6 text-center">
@@ -99,7 +99,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
           )}
           {discount > 0 && (
             <div className="absolute top-2.5 left-2.5 z-10">
-              <Badge className="bg-black text-white border-black text-[11px] font-bold px-2 py-0.5">
+              <Badge className="bg-black text-white border-black text-[11px] font-bold px-2 py-0.5 rounded">
                 -{discount}% OFF
               </Badge>
             </div>
@@ -113,13 +113,13 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                 key={idx}
                 onClick={() => setSelectedImage(img.image_url)}
                 className={cn(
-                  "w-14 h-16 shrink-0 bg-off-white border transition-all flex items-center justify-center overflow-hidden",
+                  "w-14 h-16 shrink-0 bg-off-white border rounded-md transition-all flex items-center justify-center overflow-hidden",
                   selectedImage === img.image_url ? "border-black ring-1 ring-black" : "border-border hover:border-black/50"
                 )}
                 aria-label={`View image ${idx + 1}`}
               >
                 {img.image_url ? (
-                  <img src={img.image_url} alt={`${product.name} ${idx}`} className="w-full h-full object-cover" />
+                  <img src={img.image_url} alt={`${product.name} ${idx}`} className="w-full h-full object-contain p-0.5" />
                 ) : (
                   <span className="text-[10px] uppercase font-bold text-gray">0{idx + 1}</span>
                 )}

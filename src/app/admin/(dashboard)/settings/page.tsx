@@ -15,7 +15,9 @@ import {
   Shield,
   MessageSquare,
   Bell,
-  Star
+  Star,
+  Megaphone,
+  FileText
 } from 'lucide-react';
 import { 
   getSetting, 
@@ -26,22 +28,28 @@ import {
   CommunitySectionSettings,
   AnnouncementBarSettings,
   HomePageSectionsSettings,
+  AdvertisementWidgetSettings,
+  PolicyPagesSettings,
   DEFAULT_HERO_BANNER,
   DEFAULT_PROMO_BANNER,
   DEFAULT_WHY_AURA,
   DEFAULT_COMMUNITY,
   DEFAULT_ANNOUNCEMENT_BAR,
   DEFAULT_HOMEPAGE_SECTIONS,
+  DEFAULT_ADVERTISEMENT_WIDGET,
+  DEFAULT_POLICY_PAGES,
   CustomerReview
 } from '@/lib/services/settings';
 import { uploadImageToStorage } from '@/lib/services/storage';
 import { getAllSubmittedReviews, ProductReview } from '@/lib/services/reviews';
+import { getAllAdminProducts } from '@/lib/services/products';
+import { Product } from '@/lib/types';
 
 export default function AdminSettings() {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'hero' | 'promo' | 'sections' | 'why' | 'community' | 'store'>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'promo' | 'sections' | 'ad_widget' | 'why' | 'community' | 'store' | 'policies'>('hero');
 
   // 1. Announcement Bar
   const [announcementEnabled, setAnnouncementEnabled] = useState(DEFAULT_ANNOUNCEMENT_BAR.isEnabled);
@@ -111,6 +119,31 @@ export default function AdminSettings() {
   const [shippingFee, setShippingFee] = useState('99');
   const [returnDays, setReturnDays] = useState('7');
 
+  // 8. Homepage Advertisement Widget
+  const [adEnabled, setAdEnabled] = useState(DEFAULT_ADVERTISEMENT_WIDGET.isEnabled);
+  const [adTag, setAdTag] = useState(DEFAULT_ADVERTISEMENT_WIDGET.tag);
+  const [adTitle, setAdTitle] = useState(DEFAULT_ADVERTISEMENT_WIDGET.title);
+  const [adSubtitle, setAdSubtitle] = useState(DEFAULT_ADVERTISEMENT_WIDGET.subtitle);
+  const [adBadge, setAdBadge] = useState(DEFAULT_ADVERTISEMENT_WIDGET.badge);
+  const [adButtonText, setAdButtonText] = useState(DEFAULT_ADVERTISEMENT_WIDGET.buttonText);
+  const [adButtonLink, setAdButtonLink] = useState(DEFAULT_ADVERTISEMENT_WIDGET.buttonLink);
+  const [adProductIds, setAdProductIds] = useState<string[]>(DEFAULT_ADVERTISEMENT_WIDGET.productIds);
+  const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
+
+  // 9. Store Policies & Info Pages
+  const [aboutStoryTitle, setAboutStoryTitle] = useState(DEFAULT_POLICY_PAGES.aboutStoryTitle);
+  const [aboutStorySubtitle, setAboutStorySubtitle] = useState(DEFAULT_POLICY_PAGES.aboutStorySubtitle);
+  const [aboutStoryText, setAboutStoryText] = useState(DEFAULT_POLICY_PAGES.aboutStoryText);
+  const [aboutPhilosophyText, setAboutPhilosophyText] = useState(DEFAULT_POLICY_PAGES.aboutPhilosophyText);
+  const [contactEmail, setContactEmail] = useState(DEFAULT_POLICY_PAGES.contactEmail);
+  const [contactPhone, setContactPhone] = useState(DEFAULT_POLICY_PAGES.contactPhone);
+  const [contactInstagram, setContactInstagram] = useState(DEFAULT_POLICY_PAGES.contactInstagram);
+  const [contactAddress, setContactAddress] = useState(DEFAULT_POLICY_PAGES.contactAddress);
+  const [contactHours, setContactHours] = useState(DEFAULT_POLICY_PAGES.contactHours);
+  const [shippingPolicyText, setShippingPolicyText] = useState(DEFAULT_POLICY_PAGES.shippingPolicyText);
+  const [returnPolicyText, setReturnPolicyText] = useState(DEFAULT_POLICY_PAGES.returnPolicyText);
+  const [privacyPolicyText, setPrivacyPolicyText] = useState(DEFAULT_POLICY_PAGES.privacyPolicyText);
+
   useEffect(() => {
     async function loadAllSettings() {
       setLoading(true);
@@ -123,6 +156,9 @@ export default function AdminSettings() {
         annData,
         storeData,
         allCustReviews,
+        adData,
+        policyData,
+        catalogProducts,
       ] = await Promise.all([
         getSetting<HeroBannerSettings>('hero_banner', DEFAULT_HERO_BANNER),
         getSetting<HomePageSectionsSettings>('homepage_sections', DEFAULT_HOMEPAGE_SECTIONS),
@@ -132,10 +168,43 @@ export default function AdminSettings() {
         getSetting<AnnouncementBarSettings>('announcement_bar', DEFAULT_ANNOUNCEMENT_BAR),
         getSetting<any>('store_info', null),
         getAllSubmittedReviews(),
+        getSetting<AdvertisementWidgetSettings>('ad_widget', DEFAULT_ADVERTISEMENT_WIDGET),
+        getSetting<PolicyPagesSettings>('policy_pages', DEFAULT_POLICY_PAGES),
+        getAllAdminProducts(),
       ]);
+
+      if (catalogProducts) {
+        setAvailableProducts(catalogProducts);
+      }
 
       if (allCustReviews) {
         setSubmittedReviews(allCustReviews);
+      }
+
+      if (adData) {
+        setAdEnabled(adData.isEnabled ?? true);
+        setAdTag(adData.tag || DEFAULT_ADVERTISEMENT_WIDGET.tag);
+        setAdTitle(adData.title || DEFAULT_ADVERTISEMENT_WIDGET.title);
+        setAdSubtitle(adData.subtitle || DEFAULT_ADVERTISEMENT_WIDGET.subtitle);
+        setAdBadge(adData.badge || DEFAULT_ADVERTISEMENT_WIDGET.badge);
+        setAdButtonText(adData.buttonText || DEFAULT_ADVERTISEMENT_WIDGET.buttonText);
+        setAdButtonLink(adData.buttonLink || DEFAULT_ADVERTISEMENT_WIDGET.buttonLink);
+        setAdProductIds(adData.productIds || []);
+      }
+
+      if (policyData) {
+        setAboutStoryTitle(policyData.aboutStoryTitle || DEFAULT_POLICY_PAGES.aboutStoryTitle);
+        setAboutStorySubtitle(policyData.aboutStorySubtitle || DEFAULT_POLICY_PAGES.aboutStorySubtitle);
+        setAboutStoryText(policyData.aboutStoryText || DEFAULT_POLICY_PAGES.aboutStoryText);
+        setAboutPhilosophyText(policyData.aboutPhilosophyText || DEFAULT_POLICY_PAGES.aboutPhilosophyText);
+        setContactEmail(policyData.contactEmail || DEFAULT_POLICY_PAGES.contactEmail);
+        setContactPhone(policyData.contactPhone || DEFAULT_POLICY_PAGES.contactPhone);
+        setContactInstagram(policyData.contactInstagram || DEFAULT_POLICY_PAGES.contactInstagram);
+        setContactAddress(policyData.contactAddress || DEFAULT_POLICY_PAGES.contactAddress);
+        setContactHours(policyData.contactHours || DEFAULT_POLICY_PAGES.contactHours);
+        setShippingPolicyText(policyData.shippingPolicyText || DEFAULT_POLICY_PAGES.shippingPolicyText);
+        setReturnPolicyText(policyData.returnPolicyText || DEFAULT_POLICY_PAGES.returnPolicyText);
+        setPrivacyPolicyText(policyData.privacyPolicyText || DEFAULT_POLICY_PAGES.privacyPolicyText);
       }
 
       if (heroData) {
@@ -277,6 +346,14 @@ export default function AdminSettings() {
     }
   };
 
+  const handleToggleAdProduct = (id: string) => {
+    if (adProductIds.includes(id)) {
+      setAdProductIds(adProductIds.filter((pId) => pId !== id));
+    } else {
+      setAdProductIds([...adProductIds, id]);
+    }
+  };
+
   const handleSaveAll = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -333,6 +410,33 @@ export default function AdminSettings() {
       text: announcementText.trim(),
     };
 
+    const adPayload: AdvertisementWidgetSettings = {
+      isEnabled: adEnabled,
+      tag: adTag.trim(),
+      title: adTitle.trim(),
+      subtitle: adSubtitle.trim(),
+      badge: adBadge.trim(),
+      buttonText: adButtonText.trim(),
+      buttonLink: adButtonLink.trim(),
+      productIds: adProductIds,
+      layout: 'grid',
+    };
+
+    const policiesPayload: PolicyPagesSettings = {
+      aboutStoryTitle: aboutStoryTitle.trim(),
+      aboutStorySubtitle: aboutStorySubtitle.trim(),
+      aboutStoryText: aboutStoryText.trim(),
+      aboutPhilosophyText: aboutPhilosophyText.trim(),
+      contactEmail: contactEmail.trim(),
+      contactPhone: contactPhone.trim(),
+      contactInstagram: contactInstagram.trim(),
+      contactAddress: contactAddress.trim(),
+      contactHours: contactHours.trim(),
+      shippingPolicyText: shippingPolicyText.trim(),
+      returnPolicyText: returnPolicyText.trim(),
+      privacyPolicyText: privacyPolicyText.trim(),
+    };
+
     const storePayload = {
       storeName,
       tagline,
@@ -348,14 +452,16 @@ export default function AdminSettings() {
       saveSetting('hero_banner', heroPayload),
       saveSetting('homepage_sections', sectionsPayload),
       saveSetting('promo_banner', promoPayload),
+      saveSetting('ad_widget', adPayload),
       saveSetting('why_aura', whyPayload),
       saveSetting('community_reviews', communityPayload),
       saveSetting('announcement_bar', annPayload),
       saveSetting('store_info', storePayload),
+      saveSetting('policy_pages', policiesPayload),
     ]);
 
     setIsSaving(false);
-    setFeedback('All home page sections and settings have been saved and published!');
+    setFeedback('All home page sections, advertisements, and store policy pages have been saved and published!');
     setTimeout(() => setFeedback(null), 4000);
   };
 
@@ -389,12 +495,14 @@ export default function AdminSettings() {
       {/* Navigation Tabs for Fast Editing */}
       <div className="flex flex-wrap gap-1.5 border-b border-border pb-2">
         {[
-          { id: 'hero', label: '1. Hero & Announcement', icon: Layout },
-          { id: 'promo', label: '2. Drop 01 Promo Banner', icon: Sparkles },
+          { id: 'hero', label: '1. Hero & Top Bar', icon: Layout },
+          { id: 'promo', label: '2. Drop 01 Promo', icon: Sparkles },
           { id: 'sections', label: '3. Categories & Featured', icon: Store },
-          { id: 'why', label: '4. Why AURA OUTLET', icon: Shield },
-          { id: 'community', label: '5. Community Reviews', icon: MessageSquare },
-          { id: 'store', label: '6. Store & Shipping', icon: Truck },
+          { id: 'ad_widget', label: '4. Ad Spotlight Widget', icon: Megaphone },
+          { id: 'why', label: '5. Why AURA OUTLET', icon: Shield },
+          { id: 'community', label: '6. Community Reviews', icon: MessageSquare },
+          { id: 'store', label: '7. Store & Shipping', icon: Truck },
+          { id: 'policies', label: '8. Policies & Info Pages', icon: FileText },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -682,7 +790,117 @@ export default function AdminSettings() {
           </div>
         )}
 
-        {/* TAB 4: WHY AURA OUTLET */}
+        {/* TAB 4: HOMEPAGE AD WIDGET (SPOTLIGHT T-SHIRTS) */}
+        {activeTab === 'ad_widget' && (
+          <div className="space-y-5 animate-fade-in">
+            <div className="bg-white border border-border p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-2.5">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-black">Homepage Advertisement & Spotlight Banner</h3>
+                  <p className="text-[11px] text-gray mt-0.5">Highlight specific t-shirt drops or special promotions directly on the home page.</p>
+                </div>
+                <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={adEnabled} 
+                    onChange={(e) => setAdEnabled(e.target.checked)}
+                    className="accent-black"
+                  />
+                  Enable Widget
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Top Tagline</label>
+                  <Input value={adTag} onChange={(e) => setAdTag(e.target.value)} placeholder="Featured Drop • Spotlights" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Badge Text</label>
+                  <Input value={adBadge} onChange={(e) => setAdBadge(e.target.value)} placeholder="HOT PICKS" />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Headline Title</label>
+                  <Input value={adTitle} onChange={(e) => setAdTitle(e.target.value)} placeholder="Top Heavyweights & Signature Picks" />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Subtitle / Description</label>
+                  <Textarea value={adSubtitle} onChange={(e) => setAdSubtitle(e.target.value)} rows={2} placeholder="Engineered 240+ GSM dense cotton tees styled for modern streetwear enthusiasts." />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Button Label</label>
+                  <Input value={adButtonText} onChange={(e) => setAdButtonText(e.target.value)} placeholder="View All Designs" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Button Link</label>
+                  <Input value={adButtonLink} onChange={(e) => setAdButtonLink(e.target.value)} placeholder="/shop" />
+                </div>
+              </div>
+            </div>
+
+            {/* Advertised Products Picker */}
+            <div className="bg-white border border-border p-5 space-y-4">
+              <div className="border-b border-border pb-2.5 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-black">Select T-Shirts to Spotlight ({adProductIds.length} Selected)</h3>
+                  <p className="text-[11px] text-gray mt-0.5">Click any product to toggle its presence in the advertised widget banner.</p>
+                </div>
+                {adProductIds.length > 0 && (
+                  <button 
+                    type="button" 
+                    onClick={() => setAdProductIds([])}
+                    className="text-[11px] font-bold text-red-600 hover:underline uppercase tracking-wider"
+                  >
+                    Clear All
+                  </button>
+                )}
+              </div>
+
+              {availableProducts.length === 0 ? (
+                <p className="text-xs text-gray py-4 text-center">No products found in catalog.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-[360px] overflow-y-auto p-1 border border-border bg-off-white rounded-md">
+                  {availableProducts.map((p) => {
+                    const isSelected = adProductIds.includes(p.id) || adProductIds.includes(p.slug);
+                    const thumbnail = p.images && p.images[0]?.image_url;
+                    return (
+                      <div 
+                        key={p.id}
+                        onClick={() => handleToggleAdProduct(p.id)}
+                        className={`p-2.5 border rounded cursor-pointer flex items-center gap-2.5 transition-all ${
+                          isSelected 
+                            ? 'bg-black text-white border-black shadow-sm' 
+                            : 'bg-white text-black border-border hover:border-black'
+                        }`}
+                      >
+                        <div className="w-10 h-10 shrink-0 bg-off-white border border-border flex items-center justify-center overflow-hidden rounded">
+                          {thumbnail ? (
+                            <img src={thumbnail} alt={p.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[9px] font-bold uppercase text-gray">AO</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold truncate leading-tight">{p.name}</p>
+                          <p className={`text-[10px] mt-0.5 ${isSelected ? 'text-gray-300' : 'text-gray'}`}>
+                            {p.sale_price ? `₹${p.sale_price}` : `₹${p.base_price}`}
+                          </p>
+                        </div>
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] font-bold ${
+                          isSelected ? 'bg-white text-black border-white' : 'border-gray-400'
+                        }`}>
+                          {isSelected ? '✓' : ''}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: WHY AURA OUTLET */}
         {activeTab === 'why' && (
           <div className="bg-white border border-border p-5 space-y-4 animate-fade-in">
             <div className="border-b border-border pb-2.5">
@@ -922,6 +1140,89 @@ export default function AdminSettings() {
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Standard Delivery Fee (₹)</label>
                 <Input type="number" min="0" value={shippingFee} onChange={(e) => setShippingFee(e.target.value)} required />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 8: STORE POLICIES & INFO PAGES */}
+        {activeTab === 'policies' && (
+          <div className="space-y-5 animate-fade-in">
+            {/* About Us Page Customization */}
+            <div className="bg-white border border-border p-5 space-y-4">
+              <div className="border-b border-border pb-2.5">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-black">About Us Page (/about)</h3>
+                <p className="text-[11px] text-gray mt-0.5">Control your brand story, philosophy, and mission statements.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Story Title</label>
+                  <Input value={aboutStoryTitle} onChange={(e) => setAboutStoryTitle(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Story Subtitle</label>
+                  <Input value={aboutStorySubtitle} onChange={(e) => setAboutStorySubtitle(e.target.value)} />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Brand Story Paragraph</label>
+                  <Textarea value={aboutStoryText} onChange={(e) => setAboutStoryText(e.target.value)} rows={3} />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Design Philosophy & Quality Standards</label>
+                  <Textarea value={aboutPhilosophyText} onChange={(e) => setAboutPhilosophyText(e.target.value)} rows={3} />
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Page Customization */}
+            <div className="bg-white border border-border p-5 space-y-4">
+              <div className="border-b border-border pb-2.5">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-black">Contact Page (/contact)</h3>
+                <p className="text-[11px] text-gray mt-0.5">Direct contact details displayed to customers.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Official Support Email</label>
+                  <Input value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Customer Support Phone / WhatsApp</label>
+                  <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Instagram Handle</label>
+                  <Input value={contactInstagram} onChange={(e) => setContactInstagram(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Headquarters Address</label>
+                  <Input value={contactAddress} onChange={(e) => setContactAddress(e.target.value)} />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Operating Hours</label>
+                  <Input value={contactHours} onChange={(e) => setContactHours(e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            {/* Shipping, Returns & Privacy Policies */}
+            <div className="bg-white border border-border p-5 space-y-4">
+              <div className="border-b border-border pb-2.5">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-black">Store Policies</h3>
+                <p className="text-[11px] text-gray mt-0.5">Policy statements displayed across `/shipping-policy`, `/return-refund-policy`, and `/privacy-policy`.</p>
+              </div>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Shipping Policy Summary</label>
+                  <Textarea value={shippingPolicyText} onChange={(e) => setShippingPolicyText(e.target.value)} rows={3} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Return & Refund Policy Summary</label>
+                  <Textarea value={returnPolicyText} onChange={(e) => setReturnPolicyText(e.target.value)} rows={3} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Privacy Policy Summary</label>
+                  <Textarea value={privacyPolicyText} onChange={(e) => setPrivacyPolicyText(e.target.value)} rows={3} />
+                </div>
               </div>
             </div>
           </div>

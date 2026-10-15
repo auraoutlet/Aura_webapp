@@ -2,13 +2,16 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { Container, Button } from '@/components/ui';
+import { getSetting, PolicyPagesSettings, DEFAULT_POLICY_PAGES } from '@/lib/services/settings';
 
 export const metadata: Metadata = {
   title: 'About Us | AURA OUTLET',
   description: 'Learn about AURA OUTLET, our brand philosophy, and our commitment to premium monochrome streetwear.',
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const policy = await getSetting<PolicyPagesSettings>('policy_pages', DEFAULT_POLICY_PAGES);
+
   return (
     <div className="animate-fade-in">
       {/* Hero Section - Compact */}
@@ -31,13 +34,13 @@ export default function AboutPage() {
             </div>
 
             <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-white/60 mb-2">
-              The Brand Story
+              {policy.aboutStorySubtitle || 'The Brand Story'}
             </p>
             <h1 className="text-2xl md:text-4xl font-black tracking-tight uppercase mb-3">
-              Heavyweight Monochrome Streetwear
+              {policy.aboutStoryTitle || 'Heavyweight Monochrome Streetwear'}
             </h1>
             <p className="text-xs md:text-sm text-white/80 max-w-xl leading-relaxed">
-              Redefining contemporary Indian streetwear through elevated oversized cuts, 240+ GSM dense cotton, and an uncompromising monochrome aesthetic.
+              {policy.aboutStoryText || 'Redefining contemporary Indian streetwear through elevated oversized cuts, 240+ GSM dense cotton, and an uncompromising monochrome aesthetic.'}
             </p>
           </div>
         </Container>
@@ -49,7 +52,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Visual Brand Showcase */}
             <div className="lg:col-span-5 relative">
-              <div className="aspect-[4/5] max-h-[420px] bg-black relative overflow-hidden group shadow-md mx-auto">
+              <div className="aspect-[4/5] max-h-[420px] bg-black relative overflow-hidden group shadow-md mx-auto rounded-lg">
                 <img 
                   src="https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1200&q=80" 
                   alt="AURA OUTLET Fit" 
@@ -82,7 +85,7 @@ export default function AboutPage() {
               
               <div className="space-y-3 text-gray leading-relaxed text-xs md:text-sm">
                 <p>
-                  <strong className="text-black font-semibold">AURA OUTLET</strong> was born with a single directive: eliminate fast-fashion clutter and engineer authentic, dense streetwear crafted to outlast transient trends.
+                  {policy.aboutPhilosophyText || 'At AURA OUTLET, we construct clothing with structural weight and purpose. Every silhouette is intentionally designed with boxy proportions, drop shoulders, and reinforced sag-proof neck ribs.'}
                 </p>
                 <p>
                   While conventional brands dilute silhouettes with micro-trends, <strong className="text-black font-semibold">AURA OUTLET</strong> concentrates exclusively on drop-shoulder geometry, collar firmness, and tactile fabric density. Every cut is calibrated to deliver an effortless silhouette.

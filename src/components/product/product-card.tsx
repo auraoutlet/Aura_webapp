@@ -21,8 +21,8 @@ export function ProductCard({ product }: ProductCardProps) {
     : 0;
 
   return (
-    <div className="group relative flex flex-col card-hover">
-      <Link href={`/products/${product.slug}`} className="flex flex-col relative w-full aspect-[3/4] bg-off-white overflow-hidden mb-3.5 block border border-border">
+    <div className="group relative flex flex-col card-hover rounded-lg overflow-hidden border border-border bg-white shadow-sm hover:shadow-md transition-all">
+      <Link href={`/products/${product.slug}`} className="flex flex-col relative w-full aspect-[4/5] bg-off-white overflow-hidden block">
         {/* Image */}
         <div className="w-full h-full bg-off-white group-hover:scale-105 transition-transform duration-500 flex items-center justify-center text-gray">
           {product.images && product.images.length > 0 && product.images[0].image_url ? (
@@ -34,7 +34,7 @@ export function ProductCard({ product }: ProductCardProps) {
         
         {discount > 0 && (
           <div className="absolute top-3 left-3 z-10">
-            <Badge className="bg-black text-white border-black text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-none shadow-sm">
+            <Badge className="bg-black text-white border-black text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow-sm">
               -{discount}%
             </Badge>
           </div>
@@ -61,19 +61,19 @@ export function ProductCard({ product }: ProductCardProps) {
         />
       </button>
 
-      <Link href={`/products/${product.slug}`} className="flex flex-col flex-1 block">
+      <Link href={`/products/${product.slug}`} className="flex flex-col flex-1 p-3.5 block">
         {product.category && (
-          <span className="text-xs md:text-sm font-semibold uppercase tracking-widest text-gray mb-1.5">{product.category.name}</span>
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-gray mb-1">{product.category.name}</span>
         )}
-        <h3 className="text-base md:text-lg font-bold text-black line-clamp-1 mb-2 group-hover:underline">{product.name}</h3>
-        <div className="flex items-center gap-3 mt-auto">
+        <h3 className="text-sm sm:text-base font-bold text-black line-clamp-1 mb-1.5 group-hover:underline">{product.name}</h3>
+        <div className="flex items-center gap-2.5 mt-auto">
           {product.sale_price ? (
             <>
-              <span className="text-base md:text-lg font-black text-black">{formatPrice(product.sale_price)}</span>
-              <span className="text-sm md:text-base text-gray line-through font-medium">{formatPrice(product.base_price)}</span>
+              <span className="text-sm sm:text-base font-black text-black">{formatPrice(product.sale_price)}</span>
+              <span className="text-xs text-gray line-through font-medium">{formatPrice(product.base_price)}</span>
             </>
           ) : (
-            <span className="text-base md:text-lg font-black text-black">{formatPrice(product.base_price)}</span>
+            <span className="text-sm sm:text-base font-black text-black">{formatPrice(product.base_price)}</span>
           )}
         </div>
       </Link>

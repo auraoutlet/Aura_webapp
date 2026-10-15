@@ -1,5 +1,6 @@
 import { Mail, Phone, MapPin, Clock } from 'lucide-react';
 import { Container } from '@/components/ui';
+import { getSetting, PolicyPagesSettings, DEFAULT_POLICY_PAGES } from '@/lib/services/settings';
 
 // Inline Instagram icon since lucide-react does not bundle an Instagram export
 function InstagramIcon({ className = 'w-5 h-5' }: { className?: string }) {
@@ -10,38 +11,40 @@ function InstagramIcon({ className = 'w-5 h-5' }: { className?: string }) {
   );
 }
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const policy = await getSetting<PolicyPagesSettings>('policy_pages', DEFAULT_POLICY_PAGES);
+
   const contactCards = [
     {
       icon: Mail,
       title: 'Email Us',
-      detail: 'support@auraoutlet.com',
+      detail: policy.contactEmail || 'support@auraoutlet.com',
       subtext: 'Average response time: within 24 hours',
       actionLabel: 'Send Email',
-      href: 'mailto:support@auraoutlet.com',
+      href: `mailto:${policy.contactEmail || 'support@auraoutlet.com'}`,
     },
     {
       icon: Phone,
       title: 'Phone & WhatsApp',
-      detail: '+91 83009 48486',
+      detail: policy.contactPhone || '+91 83009 48486',
       subtext: 'Direct customer support line',
       actionLabel: 'Call / WhatsApp',
-      href: 'tel:+918300948486',
+      href: `tel:${(policy.contactPhone || '+91 83009 48486').replace(/\s+/g, '')}`,
     },
     {
       icon: InstagramIcon,
       isCustomIcon: true,
       title: 'Instagram',
-      detail: '@aura.outlet._',
+      detail: policy.contactInstagram || '@aura.outlet._',
       subtext: 'DM us for sizing, fit checks & drops',
       actionLabel: 'Open Profile',
-      href: 'https://www.instagram.com/aura.outlet._/',
+      href: `https://www.instagram.com/${(policy.contactInstagram || '@aura.outlet._').replace('@', '')}/`,
       target: '_blank',
     },
     {
       icon: MapPin,
       title: 'Headquarters',
-      detail: 'Salem, Tamil Nadu, India',
+      detail: policy.contactAddress || 'Salem, Tamil Nadu, India',
       subtext: 'Fulfillment & Distribution Hub',
       actionLabel: 'India Delivery Network',
       href: null,
@@ -49,7 +52,7 @@ export default function ContactPage() {
     {
       icon: Clock,
       title: 'Support Hours',
-      detail: 'Mon – Sat: 9:00 AM – 8:00 PM IST',
+      detail: policy.contactHours || 'Mon – Sat: 9:00 AM – 8:00 PM IST',
       subtext: 'Orders dispatch within 24-48 hours',
       actionLabel: null,
       href: null,

@@ -33,8 +33,8 @@ export default function CheckoutPage() {
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [addressError, setAddressError] = useState('');
 
-  // Payment method
-  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card'>('upi');
+  // Payment method: upi, card, or cod (with advance confirmation)
+  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card' | 'cod'>('upi');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [orderError, setOrderError] = useState('');
   
@@ -46,9 +46,15 @@ export default function CheckoutPage() {
 
   const cartItems = useCartStore((s) => s.items);
   const subtotal = useCartStore((s) => s.getSubtotal());
-  const shipping = useCartStore((s) => s.getShipping());
+  const cartShipping = useCartStore((s) => s.getShipping());
   const clearCart = useCartStore((s) => s.clearCart);
   const isHydrated = useHydration();
+
+  // For COD: ₹50 base shipping + ₹100 COD charge = ₹150 total delivery & handling
+  // For Prepaid: standard shipping (₹50 or free above ₹999)
+  const isCod = paymentMethod === 'cod';
+  const shipping = isCod ? 150 : cartShipping;
+  const codAdvanceAmount = 200;
 
   useEffect(() => {
     useCartStore.persist.rehydrate();
@@ -105,6 +111,8 @@ export default function CheckoutPage() {
   }
 
   const total = Math.max(0, subtotal - discountAmount + shipping);
+  const amountToPayNow = isCod ? Math.min(codAdvanceAmount, total) : total;
+  const codBalanceDue = isCod ? Math.max(0, total - amountToPayNow) : 0;
 
   // Apply Coupon via Supabase
   const handleApplyCoupon = async () => {
@@ -249,9 +257,17 @@ export default function CheckoutPage() {
       });
 
       const paymentMethodLabel = 
-        paymentMethod === 'card' ? 'Credit / Debit Card' : 'UPI / NetBanking';
+        paymentMethod === 'cod' 
+          ? 'Cash on Delivery (₹200 Advance Paid)'
+          : paymentMethod === 'card' 
+          ? 'Credit / Debit Card' 
+          : 'UPI / NetBanking';
 
-      // Cashfree Payment Flow (Prepaid only)
+      const orderNotes = isCod 
+        ? `COD Order: ₹${amountToPayNow} advance paid online via Cashfree. Remaining balance: ₹${codBalanceDue} to be collected in cash upon doorstep delivery.`
+        : undefined;
+
+      // Cashfree Payment Flow
       const orderId = `ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       const orderNumber = `AO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
@@ -261,37 +277,39 @@ export default function CheckoutPage() {
         orderNumber,
         userId: currentUser.id,
         addressId: selectedAddressId,
-          subtotal,
-          discount: discountAmount,
-          shippingFee: shipping,
-          totalAmount: total,
-          items: orderItemsInput,
-          couponCode: appliedCoupon?.code,
-          paymentMethod: paymentMethodLabel,
-          paymentStatus: 'PENDING',
-          orderStatus: 'PENDING',
-        });
+        subtotal,
+        discount: discountAmount,
+        shippingFee: shipping,
+        totalAmount: total,
+        items: orderItemsInput,
+        couponCode: appliedCoupon?.code,
+        paymentMethod: paymentMethodLabel,
+        paymentStatus: 'PENDING',
+        orderStatus: 'PENDING',
+        notes: orderNotes,
+      });
 
-        if (!dbResult.success) {
-          throw new Error(dbResult.error || 'Failed to initialize order in database');
-        }
+      if (!dbResult.success) {
+        throw new Error(dbResult.error || 'Failed to initialize order in database');
+      }
 
-        // Fetch user data for Cashfree customer details
-        const customer_name = addresses.find(a => a.id === selectedAddressId)?.full_name || currentUser.email?.split('@')[0] || 'Customer';
-        const customer_email = currentUser.email || 'customer@auraoutlet.com';
-        const customer_phone = addresses.find(a => a.id === selectedAddressId)?.phone || '9999999999';
+      // Fetch user data for Cashfree customer details
+      const customer_name = addresses.find(a => a.id === selectedAddressId)?.full_name || currentUser.email?.split('@')[0] || 'Customer';
+      const customer_email = currentUser.email || 'customer@auraoutlet.com';
+      const customer_phone = addresses.find(a => a.id === selectedAddressId)?.phone || '9999999999';
 
-        const response = await fetch('/api/cashfree/create-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: total,
-            orderId,
-            customer_name,
-            customer_email,
-            customer_phone,
-          }),
-        });
+      // Amount to pay right now: for COD it's the ₹200 advance; for Prepaid it's the full total
+      const response = await fetch('/api/cashfree/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: amountToPayNow,
+          orderId,
+          customer_name,
+          customer_email,
+          customer_phone,
+        }),
+      });
 
         const data = await response.json();
         if (!response.ok) {
@@ -635,27 +653,52 @@ export default function CheckoutPage() {
             {/* STEP 3: PAYMENT */}
             {step === 3 && (
               <div className="space-y-5 animate-fade-in">
-                <h2 className="text-base md:text-lg font-black tracking-wide uppercase text-black">Payment Method</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base md:text-lg font-black tracking-wide uppercase text-black">Payment Method</h2>
+                  <span className="text-[11px] text-gray uppercase tracking-widest font-bold">Step 3 of 3</span>
+                </div>
                 
                 <div className="space-y-2.5">
                   {[
-                    { id: 'upi', label: 'UPI / Net Banking / QR', desc: 'Google Pay, PhonePe, Paytm, BHIM, Instant Net Banking' },
-                    { id: 'card', label: 'Credit / Debit Card', desc: 'Visa, MasterCard, RuPay, Maestro' },
+                    { 
+                      id: 'upi', 
+                      label: 'UPI / Net Banking / QR (Prepaid)', 
+                      desc: 'Google Pay, PhonePe, Paytm, BHIM, Instant Net Banking. Enjoy free shipping above ₹999.' 
+                    },
+                    { 
+                      id: 'card', 
+                      label: 'Credit / Debit Card (Prepaid)', 
+                      desc: 'Visa, MasterCard, RuPay, Maestro. 100% secure encrypted checkout.' 
+                    },
+                    { 
+                      id: 'cod', 
+                      label: 'Cash on Delivery (₹200 Advance)', 
+                      desc: 'Pay ₹200 advance online now to confirm order • ₹150 delivery & COD fee • Pay balance at doorstep.' 
+                    },
                   ].map((method) => (
                     <div 
                       key={method.id}
                       onClick={() => setPaymentMethod(method.id as any)}
                       className={cn(
-                        "border p-3.5 sm:p-4 cursor-pointer flex items-center justify-between transition-all",
-                        paymentMethod === method.id ? "border-black bg-off-white/40 ring-1 ring-black" : "border-border hover:border-black/50"
+                        "border p-3.5 sm:p-4 cursor-pointer flex items-center justify-between transition-all rounded-md",
+                        paymentMethod === method.id 
+                          ? (method.id === 'cod' ? "border-black bg-amber-50/50 ring-1 ring-black" : "border-black bg-off-white/40 ring-1 ring-black")
+                          : "border-border hover:border-black/50"
                       )}
                     >
-                      <div>
-                        <p className="font-bold text-xs sm:text-sm text-black uppercase tracking-wider">{method.label}</p>
+                      <div className="pr-2">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-xs sm:text-sm text-black uppercase tracking-wider">{method.label}</p>
+                          {method.id === 'cod' && (
+                            <Badge className="bg-amber-600 text-white border-amber-600 text-[10px] px-1.5 py-0 font-extrabold rounded">
+                              ADVANCE REQ.
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-[11px] text-gray-500 mt-0.5">{method.desc}</p>
                       </div>
                       <div className={cn(
-                        "w-4 h-4 rounded-full border-2 flex items-center justify-center",
+                        "w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0",
                         paymentMethod === method.id ? "border-black bg-black" : "border-gray-300"
                       )}>
                         {paymentMethod === method.id && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
@@ -664,20 +707,55 @@ export default function CheckoutPage() {
                   ))}
                 </div>
 
-                <div className="border border-border p-4 bg-off-white text-center">
-                  <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-3">Click below to confirm and place your order</p>
+                {/* Important Notice for Cash on Delivery */}
+                {isCod && (
+                  <div className="p-4 bg-amber-50 border-2 border-amber-300 rounded-lg text-amber-950 space-y-2.5 text-xs shadow-sm">
+                    <div className="flex items-center gap-2 font-black uppercase tracking-wider text-amber-900">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-amber-700" />
+                      <span>Cash on Delivery Policy & Breakdown</span>
+                    </div>
+                    <p className="leading-relaxed text-[11px] text-amber-900">
+                      To protect against fraudulent bookings and lock your courier allocation, an advance token of <strong>₹200</strong> is required online via UPI/Card.
+                    </p>
+                    <div className="bg-white/90 p-3 rounded border border-amber-200 space-y-1.5 text-[11px]">
+                      <div className="flex justify-between text-gray-700">
+                        <span>Total Delivery & Handling Charge:</span>
+                        <span className="font-bold text-black">₹150 (₹50 Shipping + ₹100 COD Fee)</span>
+                      </div>
+                      <div className="flex justify-between text-amber-900 font-bold border-t border-amber-100 pt-1.5">
+                        <span>Pay Online Right Now (Advance):</span>
+                        <span className="font-black text-sm text-black">{formatPrice(amountToPayNow)}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-800 font-bold">
+                        <span>Remaining Balance Payable at Doorstep (Cash):</span>
+                        <span className="font-black text-sm text-green-700">{formatPrice(codBalanceDue)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="border border-border p-4 bg-off-white text-center rounded-lg">
+                  <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-3">
+                    {isCod 
+                      ? 'Secure your order now with ₹200 advance payment' 
+                      : 'Click below to confirm and complete payment'}
+                  </p>
                   <Button 
                     size="lg" 
-                    className="w-full h-11 text-xs md:text-sm font-black tracking-widest uppercase" 
+                    className="w-full h-11 text-xs md:text-sm font-black tracking-widest uppercase rounded-md shadow-sm" 
                     onClick={handlePlaceOrder}
                     disabled={isPlacingOrder}
                   >
-                    {isPlacingOrder ? 'Processing...' : `Confirm & Pay ${formatPrice(total)}`}
+                    {isPlacingOrder 
+                      ? 'Processing...' 
+                      : isCod 
+                      ? `Confirm & Pay Advance ${formatPrice(amountToPayNow)}` 
+                      : `Confirm & Pay ${formatPrice(total)}`}
                   </Button>
                 </div>
                 
                 <div className="pt-3 border-t border-border">
-                  <Button variant="outline" onClick={() => setStep(2)} disabled={isPlacingOrder} className="font-bold text-xs tracking-wider h-10">
+                  <Button variant="outline" onClick={() => setStep(2)} disabled={isPlacingOrder} className="font-bold text-xs tracking-wider h-10 rounded-md">
                     Back to Review
                   </Button>
                 </div>
@@ -688,7 +766,7 @@ export default function CheckoutPage() {
 
           {/* Sidebar: Price Details */}
           <div className="lg:col-span-5 xl:col-span-4">
-            <div className="bg-off-white p-4 sm:p-5 sticky top-20 border border-border">
+            <div className="bg-off-white p-4 sm:p-5 sticky top-20 border border-border rounded-lg shadow-sm">
               <h2 className="text-sm md:text-base font-black tracking-wide uppercase mb-3.5 border-b border-border pb-2.5 text-black">
                 Price Details
               </h2>
@@ -702,14 +780,14 @@ export default function CheckoutPage() {
                         placeholder="COUPON CODE" 
                         value={couponCode} 
                         onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                        className="rounded-none uppercase tracking-wider text-xs h-9"
+                        className="rounded-md uppercase tracking-wider text-xs h-9"
                         disabled={isApplyingCoupon}
                       />
                       <Button 
                         variant="primary" 
                         onClick={handleApplyCoupon}
                         disabled={isApplyingCoupon || !couponCode.trim()}
-                        className="shrink-0 font-black tracking-wider text-xs px-4 h-9"
+                        className="shrink-0 font-black tracking-wider text-xs px-4 h-9 rounded-md"
                       >
                         {isApplyingCoupon ? '...' : 'APPLY'}
                       </Button>
@@ -717,7 +795,7 @@ export default function CheckoutPage() {
                     {couponError && <p className="text-[11px] text-error mt-1.5 font-bold">{couponError}</p>}
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between bg-black text-white p-3">
+                  <div className="flex items-center justify-between bg-black text-white p-3 rounded-md">
                     <div>
                       <span className="font-black text-xs uppercase tracking-widest block">{appliedCoupon.code} APPLIED</span>
                       <span className="text-[10px] text-gray-300 font-medium">You saved {formatPrice(discountAmount)}</span>
@@ -747,14 +825,36 @@ export default function CheckoutPage() {
                 )}
                 
                 <div className="flex justify-between">
-                  <span className="text-gray">Shipping</span>
-                  <span className="font-bold text-black">{shipping === 0 ? 'FREE' : formatPrice(shipping)}</span>
+                  <span className="text-gray">{isCod ? 'Express Shipping' : 'Shipping'}</span>
+                  <span className="font-bold text-black">
+                    {isCod ? '₹50' : (shipping === 0 ? 'FREE' : formatPrice(shipping))}
+                  </span>
                 </div>
+
+                {isCod && (
+                  <div className="flex justify-between text-amber-900 font-semibold">
+                    <span>COD Verification & Handling</span>
+                    <span className="font-bold">₹100</span>
+                  </div>
+                )}
                 
                 <div className="border-t border-border pt-2.5 flex justify-between items-baseline font-black text-sm sm:text-base text-black">
-                  <span className="uppercase tracking-wider">Total Amount</span>
+                  <span className="uppercase tracking-wider">Total Order Value</span>
                   <span>{formatPrice(total)}</span>
                 </div>
+
+                {isCod && (
+                  <div className="mt-3 p-3 bg-white border border-amber-200 rounded-md space-y-1.5 text-xs">
+                    <div className="flex justify-between font-bold text-black">
+                      <span>Pay Online Now (Advance):</span>
+                      <span className="font-black text-black">{formatPrice(amountToPayNow)}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-amber-900">
+                      <span>Doorstep Cash Due on Delivery:</span>
+                      <span className="font-black">{formatPrice(codBalanceDue)}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

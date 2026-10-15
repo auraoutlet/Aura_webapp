@@ -53,6 +53,60 @@ export interface AnnouncementBarSettings {
   text: string;
 }
 
+export interface AdvertisementWidgetSettings {
+  isEnabled: boolean;
+  tag: string;
+  title: string;
+  subtitle: string;
+  badge: string;
+  buttonText: string;
+  buttonLink: string;
+  productIds: string[]; // List of advertised product IDs or slugs
+  layout: 'grid' | 'carousel';
+}
+
+export interface PolicyPagesSettings {
+  aboutStoryTitle: string;
+  aboutStorySubtitle: string;
+  aboutStoryText: string;
+  aboutPhilosophyText: string;
+  contactEmail: string;
+  contactPhone: string;
+  contactInstagram: string;
+  contactAddress: string;
+  contactHours: string;
+  shippingPolicyText: string;
+  returnPolicyText: string;
+  privacyPolicyText: string;
+}
+
+export const DEFAULT_ADVERTISEMENT_WIDGET: AdvertisementWidgetSettings = {
+  isEnabled: true,
+  tag: 'Featured Drop • Spotlights',
+  title: 'Top Heavyweights & Signature Picks',
+  subtitle: 'Engineered 240+ GSM dense cotton tees styled for modern streetwear enthusiasts.',
+  badge: 'HOT PICKS',
+  buttonText: 'View All Designs',
+  buttonLink: '/shop',
+  productIds: [],
+  layout: 'grid',
+};
+
+export const DEFAULT_POLICY_PAGES: PolicyPagesSettings = {
+  aboutStoryTitle: 'Heavyweight Monochrome Streetwear',
+  aboutStorySubtitle: 'The Brand Story',
+  aboutStoryText: 'Redefining contemporary Indian streetwear through elevated oversized cuts, 240+ GSM dense cotton, and an uncompromising monochrome aesthetic.',
+  aboutPhilosophyText: 'At AURA OUTLET, we construct clothing with structural weight and purpose. Every silhouette is intentionally designed with boxy proportions, drop shoulders, and reinforced sag-proof neck ribs.',
+  contactEmail: 'support@auraoutlet.com',
+  contactPhone: '+91 83009 48486',
+  contactInstagram: '@aura.outlet._',
+  contactAddress: 'Salem, Tamil Nadu, India',
+  contactHours: 'Mon – Sat: 9:00 AM – 8:00 PM IST',
+  shippingPolicyText: 'Orders dispatch within 24-48 business hours across India. Prepaid orders enjoy express air transit (2-4 days). Cash on Delivery orders require ₹200 advance confirmation with ₹150 delivery & handling charges.',
+  returnPolicyText: 'We offer a 7-day hassle-free doorstep replacement or return policy for unused, unwashed items in their original brand packaging with all tags attached.',
+  privacyPolicyText: 'AURA OUTLET respects your privacy. We strictly secure customer contact and transaction information and never sell or disclose your personal data to unauthorized third parties.',
+};
+
 export interface HomePageSectionsSettings {
   showCategories: boolean;
   categoriesTag: string;

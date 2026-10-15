@@ -14,9 +14,12 @@ import {
   CommunitySectionSettings,
   DEFAULT_COMMUNITY,
   HomePageSectionsSettings,
-  DEFAULT_HOMEPAGE_SECTIONS
+  DEFAULT_HOMEPAGE_SECTIONS,
+  AdvertisementWidgetSettings,
+  DEFAULT_ADVERTISEMENT_WIDGET
 } from '@/lib/services/settings';
 import { ProductCard } from '@/components/product';
+import { AdSpotlightWidget } from '@/components/home/ad-spotlight-widget';
 
 function InstagramIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
   return (
@@ -31,20 +34,24 @@ const FEATURE_ICONS = [Star, Truck, RotateCcw, Shield];
 export default async function HomePage() {
   const [
     featuredProducts, 
+    allCatalogProducts,
     categories, 
     heroBanner,
     promoBanner,
     whyAura,
     community,
-    pageSections
+    pageSections,
+    adWidget
   ] = await Promise.all([
     getProducts({ isFeatured: true, limit: 4 }),
+    getProducts({ limit: 16 }),
     getCategories(),
     getSetting<HeroBannerSettings>('hero_banner', DEFAULT_HERO_BANNER),
     getSetting<PromoDropBannerSettings>('promo_banner', DEFAULT_PROMO_BANNER),
     getSetting<WhyAuraSettings>('why_aura', DEFAULT_WHY_AURA),
     getSetting<CommunitySectionSettings>('community_reviews', DEFAULT_COMMUNITY),
     getSetting<HomePageSectionsSettings>('homepage_sections', DEFAULT_HOMEPAGE_SECTIONS),
+    getSetting<AdvertisementWidgetSettings>('ad_widget', DEFAULT_ADVERTISEMENT_WIDGET),
   ]);
 
   return (
@@ -176,7 +183,10 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* 4. DYNAMIC PROMO DROP BANNER */}
+      {/* 4. ADVERTISEMENT & PRODUCT SPOTLIGHT WIDGET (Admin Managed) */}
+      <AdSpotlightWidget settings={adWidget} products={allCatalogProducts} />
+
+      {/* 5. DYNAMIC PROMO DROP BANNER */}
       {promoBanner.isEnabled && (
         <section className="bg-black text-white py-8 md:py-12 border-b border-white/10 relative overflow-hidden">
           <div 

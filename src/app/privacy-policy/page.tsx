@@ -1,61 +1,62 @@
 import { Metadata } from 'next';
 import { Container } from '@/components/ui';
+import { getSetting, PolicyPagesSettings, DEFAULT_POLICY_PAGES } from '@/lib/services/settings';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | AURA OUTLET',
-  description: 'Privacy Policy for AURA OUTLET.',
+  description: 'Privacy Policy and data security practices for AURA OUTLET.',
 };
 
-export default function PrivacyPolicyPage() {
+export default async function PrivacyPolicyPage() {
+  const policy = await getSetting<PolicyPagesSettings>('policy_pages', DEFAULT_POLICY_PAGES);
+
   return (
-    <div className="py-16 md:py-24">
+    <div className="py-12 md:py-20 animate-fade-in bg-white">
       <Container className="max-w-4xl">
-        <h1 className="text-4xl font-bold tracking-wider uppercase mb-8">Privacy Policy</h1>
+        <div className="border-b border-border pb-4 mb-8">
+          <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-gray mb-1">
+            Trust & Security
+          </p>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight uppercase text-black">
+            Privacy Policy
+          </h1>
+        </div>
         
-        <div className="prose prose-slate max-w-none space-y-8 text-gray-600">
-          <p className="text-sm font-medium text-black">Last Updated: September 30, 2026</p>
-
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-wider uppercase text-black">1. Information We Collect</h2>
-            <p>
-              We collect information you provide directly to us. For example, we collect information when you create an account, participate in any interactive features of our services, fill out a form, request customer support or otherwise communicate with us.
+        <div className="space-y-8 text-xs sm:text-sm text-gray-700 leading-relaxed">
+          {/* Admin Managed Overview */}
+          <div className="p-4 bg-off-white border border-border rounded-lg text-black font-medium">
+            <h3 className="font-black uppercase tracking-wider text-xs mb-1.5">Data Privacy Statement</h3>
+            <p className="leading-relaxed">
+              {policy.privacyPolicyText || 'AURA OUTLET respects your privacy. We strictly secure customer contact and transaction information and never sell or disclose your personal data to unauthorized third parties.'}
             </p>
-            <p>The types of information we may collect include your name, email address, postal address, credit card information and other contact or identifying information you choose to provide.</p>
-          </section>
+          </div>
 
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-wider uppercase text-black">2. Use of Information</h2>
-            <p>We may use information about you for various purposes, including to:</p>
-            <ul className="list-disc pl-5 space-y-2">
-              <li>Provide, maintain and improve our services;</li>
-              <li>Provide and deliver the products and services you request, process transactions and send you related information;</li>
-              <li>Send you technical notices, updates, security alerts and support and administrative messages;</li>
-              <li>Respond to your comments, questions and requests and provide customer service;</li>
-              <li>Communicate with you about products, services, offers, promotions, rewards, and events offered by AURA OUTLET.</li>
+          <section className="space-y-2.5">
+            <h2 className="text-base sm:text-lg font-black tracking-wider uppercase text-black">1. Information We Collect</h2>
+            <p>
+              We collect information you provide directly to us when you create an account, browse products, place an order, or communicate with customer care. This includes:
+            </p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Full Name, Delivery Addresses, Pincode</li>
+              <li>Phone Number and Email Address (for dispatch tracking and transactional OTPs)</li>
+              <li>Encrypted transaction references processed securely via RBI-compliant payment gateways (Cashfree/UPI)</li>
             </ul>
           </section>
 
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-wider uppercase text-black">3. Sharing of Information</h2>
-            <p>We may share information about you as follows or as otherwise described in this Privacy Policy:</p>
-            <ul className="list-disc pl-5 space-y-2">
-              <li>With vendors, consultants and other service providers who need access to such information to carry out work on our behalf;</li>
-              <li>In response to a request for information if we believe disclosure is in accordance with any applicable law, regulation or legal process;</li>
-              <li>If we believe your actions are inconsistent with the spirit or language of our user agreements or policies.</li>
-            </ul>
-          </section>
-
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-wider uppercase text-black">4. Security</h2>
+          <section className="space-y-2.5">
+            <h2 className="text-base sm:text-lg font-black tracking-wider uppercase text-black">2. Payment & Card Security</h2>
             <p>
-              AURA OUTLET takes reasonable measures to help protect information about you from loss, theft, misuse and unauthorized access, disclosure, alteration and destruction.
+              AURA OUTLET never stores your raw debit/credit card numbers or UPI MPINs. All transactions are end-to-end tokenized and processed via certified PCI-DSS compliant banking partners.
             </p>
           </section>
 
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-wider uppercase text-black">5. Contact Us</h2>
+          <section className="space-y-2.5">
+            <h2 className="text-base sm:text-lg font-black tracking-wider uppercase text-black">3. Contacting Us Regarding Your Data</h2>
             <p>
-              If you have any questions about this Privacy Policy, please contact us at: support@auraoutlet.com
+              If you have any questions or requests regarding your personal information, contact our privacy desk at{' '}
+              <a href={`mailto:${policy.contactEmail || 'support@auraoutlet.com'}`} className="font-bold text-black underline">
+                {policy.contactEmail || 'support@auraoutlet.com'}
+              </a>.
             </p>
           </section>
         </div>
