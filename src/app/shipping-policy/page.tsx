@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { Metadata } from 'next';
 import { Container } from '@/components/ui';
 import { getSetting, PolicyPagesSettings, DEFAULT_POLICY_PAGES } from '@/lib/services/settings';

@@ -35,11 +35,11 @@ export function AdSpotlightWidget({ settings, products }: AdSpotlightWidgetProps
   const count = displayProducts.length;
   const gridClass =
     count === 1
-      ? "grid grid-cols-1 max-w-xs mx-auto"
+      ? "grid grid-cols-1 max-w-sm mx-auto"
       : count === 2
-      ? "grid grid-cols-1 sm:grid-cols-2 max-w-xl mx-auto gap-4"
+      ? "grid grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto gap-4 sm:gap-6"
       : count === 3
-      ? "grid grid-cols-1 sm:grid-cols-3 max-w-3xl mx-auto gap-4"
+      ? "grid grid-cols-1 sm:grid-cols-3 max-w-5xl mx-auto gap-4 sm:gap-6"
       : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4";
 
   return (

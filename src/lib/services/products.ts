@@ -120,6 +120,39 @@ export async function getProductById(id: string): Promise<Product | null> {
   }
 }
 
+export async function getProductsByIds(ids: string[]): Promise<Product[]> {
+  if (!ids || ids.length === 0) return [];
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        *,
+        category:categories(*),
+        images:product_images(*),
+        variants:product_variants(*)
+      `)
+      .in('id', ids)
+      .eq('is_active', true);
+
+    if (error || !data) {
+      return [];
+    }
+
+    // Preserve the exact order specified in ids
+    const productMap = new Map((data as Product[]).map((p) => [p.id, p]));
+    const results: Product[] = [];
+    for (const id of ids) {
+      const p = productMap.get(id);
+      if (p) results.push(p);
+    }
+    return results;
+  } catch (err) {
+    console.warn('Supabase getProductsByIds error:', err);
+    return [];
+  }
+}
+
 export async function saveProductToDb(
   productData: Omit<Product, 'images' | 'variants' | 'category'>,
   variants: Omit<ProductVariant, 'id' | 'product_id' | 'created_at' | 'updated_at'>[],

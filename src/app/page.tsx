@@ -1,7 +1,10 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import Link from 'next/link';
 import { ArrowRight, Truck, Shield, RotateCcw, Star, CheckCircle, Sparkles } from 'lucide-react';
 import { Container, Button } from '@/components/ui';
-import { getProducts } from '@/lib/services/products';
+import { getProducts, getProductsByIds } from '@/lib/services/products';
 import { getCategories } from '@/lib/services/categories';
 import { 
   getSetting, 
@@ -34,7 +37,6 @@ const FEATURE_ICONS = [Star, Truck, RotateCcw, Shield];
 export default async function HomePage() {
   const [
     featuredProducts, 
-    allCatalogProducts,
     categories, 
     heroBanner,
     promoBanner,
@@ -44,7 +46,6 @@ export default async function HomePage() {
     adWidget
   ] = await Promise.all([
     getProducts({ isFeatured: true, limit: 4 }),
-    getProducts({ limit: 16 }),
     getCategories(),
     getSetting<HeroBannerSettings>('hero_banner', DEFAULT_HERO_BANNER),
     getSetting<PromoDropBannerSettings>('promo_banner', DEFAULT_PROMO_BANNER),
@@ -53,6 +54,10 @@ export default async function HomePage() {
     getSetting<HomePageSectionsSettings>('homepage_sections', DEFAULT_HOMEPAGE_SECTIONS),
     getSetting<AdvertisementWidgetSettings>('ad_widget', DEFAULT_ADVERTISEMENT_WIDGET),
   ]);
+
+  const highlightProducts = (adWidget?.isEnabled && adWidget?.productIds && adWidget.productIds.length > 0)
+    ? await getProductsByIds(adWidget.productIds)
+    : [];
 
   return (
     <>
@@ -184,7 +189,7 @@ export default async function HomePage() {
       )}
 
       {/* 4. ADVERTISEMENT & PRODUCT SPOTLIGHT WIDGET (Admin Managed) */}
-      <AdSpotlightWidget settings={adWidget} products={allCatalogProducts} />
+      <AdSpotlightWidget settings={adWidget} products={highlightProducts} />
 
       {/* 5. DYNAMIC PROMO DROP BANNER */}
       {promoBanner.isEnabled && (
