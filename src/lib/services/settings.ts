@@ -82,10 +82,10 @@ export interface PolicyPagesSettings {
 
 export const DEFAULT_ADVERTISEMENT_WIDGET: AdvertisementWidgetSettings = {
   isEnabled: true,
-  tag: 'Featured Drop • Spotlights',
-  title: 'Top Heavyweights & Signature Picks',
-  subtitle: 'Engineered 240+ GSM dense cotton tees styled for modern streetwear enthusiasts.',
-  badge: 'HOT PICKS',
+  tag: 'Curated Streetwear Picks',
+  title: 'Top Highlights',
+  subtitle: 'Handpicked heavyweights engineered for structural drape and longevity.',
+  badge: 'TOP HIGHLIGHTS',
   buttonText: 'View All Designs',
   buttonLink: '/shop',
   productIds: [],

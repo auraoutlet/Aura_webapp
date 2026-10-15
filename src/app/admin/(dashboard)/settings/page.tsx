@@ -498,7 +498,7 @@ export default function AdminSettings() {
           { id: 'hero', label: '1. Hero & Top Bar', icon: Layout },
           { id: 'promo', label: '2. Drop 01 Promo', icon: Sparkles },
           { id: 'sections', label: '3. Categories & Featured', icon: Store },
-          { id: 'ad_widget', label: '4. Ad Spotlight Widget', icon: Megaphone },
+          { id: 'ad_widget', label: '4. Top Highlights (T-Shirts)', icon: Megaphone },
           { id: 'why', label: '5. Why AURA OUTLET', icon: Shield },
           { id: 'community', label: '6. Community Reviews', icon: MessageSquare },
           { id: 'store', label: '7. Store & Shipping', icon: Truck },
@@ -790,14 +790,14 @@ export default function AdminSettings() {
           </div>
         )}
 
-        {/* TAB 4: HOMEPAGE AD WIDGET (SPOTLIGHT T-SHIRTS) */}
+        {/* TAB 4: HOMEPAGE AD WIDGET (TOP HIGHLIGHTS) */}
         {activeTab === 'ad_widget' && (
           <div className="space-y-5 animate-fade-in">
             <div className="bg-white border border-border p-5 space-y-4">
               <div className="flex items-center justify-between border-b border-border pb-2.5">
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-black">Homepage Advertisement & Spotlight Banner</h3>
-                  <p className="text-[11px] text-gray mt-0.5">Highlight specific t-shirt drops or special promotions directly on the home page.</p>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-black">Top Highlights / Advertised T-Shirts</h3>
+                  <p className="text-[11px] text-gray mt-0.5">Feature specific t-shirts on your home page. Only the exact t-shirts you check below will be displayed.</p>
                 </div>
                 <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
                   <input 
@@ -813,19 +813,19 @@ export default function AdminSettings() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Top Tagline</label>
-                  <Input value={adTag} onChange={(e) => setAdTag(e.target.value)} placeholder="Featured Drop • Spotlights" />
+                  <Input value={adTag} onChange={(e) => setAdTag(e.target.value)} placeholder="Curated Streetwear Picks" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Badge Text</label>
-                  <Input value={adBadge} onChange={(e) => setAdBadge(e.target.value)} placeholder="HOT PICKS" />
+                  <Input value={adBadge} onChange={(e) => setAdBadge(e.target.value)} placeholder="TOP HIGHLIGHTS" />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Headline Title</label>
-                  <Input value={adTitle} onChange={(e) => setAdTitle(e.target.value)} placeholder="Top Heavyweights & Signature Picks" />
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Section Title (e.g. Top Highlights)</label>
+                  <Input value={adTitle} onChange={(e) => setAdTitle(e.target.value)} placeholder="Top Highlights" />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Subtitle / Description</label>
-                  <Textarea value={adSubtitle} onChange={(e) => setAdSubtitle(e.target.value)} rows={2} placeholder="Engineered 240+ GSM dense cotton tees styled for modern streetwear enthusiasts." />
+                  <Textarea value={adSubtitle} onChange={(e) => setAdSubtitle(e.target.value)} rows={2} placeholder="Handpicked heavyweights engineered for structural drape and longevity." />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Button Label</label>

@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { ArrowRight, Sparkles, Flame } from 'lucide-react';
-import { Container, Button, Badge } from '@/components/ui';
+import { ArrowRight, Flame } from 'lucide-react';
+import { Container, Button } from '@/components/ui';
 import { AdvertisementWidgetSettings } from '@/lib/services/settings';
 import { Product } from '@/lib/types';
 import { ProductCard } from '@/components/product';
@@ -11,23 +11,36 @@ interface AdSpotlightWidgetProps {
 }
 
 export function AdSpotlightWidget({ settings, products }: AdSpotlightWidgetProps) {
-  if (!settings.isEnabled || products.length === 0) {
+  // If disabled, don't render
+  if (!settings.isEnabled) {
     return null;
   }
 
-  // Filter products if specific IDs are configured, otherwise show the top products
-  let displayProducts = products;
-  if (settings.productIds && settings.productIds.length > 0) {
-    const filtered = products.filter(
-      (p) => settings.productIds.includes(p.id) || settings.productIds.includes(p.slug)
-    );
-    if (filtered.length > 0) {
-      displayProducts = filtered;
-    }
+  // Only display products explicitly selected by the admin in Admin Settings!
+  // If the admin has not selected any products, do not show random fallback cards.
+  if (!settings.productIds || settings.productIds.length === 0) {
+    return null;
   }
 
-  // Show up to 4 items in the spotlight grid
-  displayProducts = displayProducts.slice(0, 4);
+  const displayProducts = products.filter(
+    (p) => settings.productIds.includes(p.id) || settings.productIds.includes(p.slug)
+  );
+
+  // If none of the selected IDs exist in active catalog, do not render
+  if (displayProducts.length === 0) {
+    return null;
+  }
+
+  // Responsive grid based on the exact number of selected cards
+  const count = displayProducts.length;
+  const gridClass =
+    count === 1
+      ? "grid grid-cols-1 max-w-xs mx-auto"
+      : count === 2
+      ? "grid grid-cols-1 sm:grid-cols-2 max-w-xl mx-auto gap-4"
+      : count === 3
+      ? "grid grid-cols-1 sm:grid-cols-3 max-w-3xl mx-auto gap-4"
+      : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4";
 
   return (
     <section className="bg-white py-10 md:py-16 border-b border-border overflow-hidden">
@@ -41,34 +54,38 @@ export function AdSpotlightWidget({ settings, products }: AdSpotlightWidgetProps
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-white/15 backdrop-blur-md text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-white rounded">
                   <Flame className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                  {settings.badge || 'HOT PICKS'}
+                  {settings.badge || 'HIGHLIGHTS'}
                 </span>
                 <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] text-white/60">
-                  {settings.tag || 'Special Spotlight'}
+                  {settings.tag || 'Curated Picks'}
                 </span>
               </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight text-white leading-tight">
-                {settings.title || 'Top Heavyweights & Signature Picks'}
+                {settings.title || 'Top Highlights'}
               </h2>
-              <p className="text-xs sm:text-sm text-white/80 leading-relaxed font-normal">
-                {settings.subtitle || 'Engineered 240+ GSM dense cotton tees styled for modern streetwear enthusiasts.'}
-              </p>
+              {settings.subtitle && (
+                <p className="text-xs sm:text-sm text-white/80 leading-relaxed font-normal">
+                  {settings.subtitle}
+                </p>
+              )}
             </div>
 
-            <Link href={settings.buttonLink || '/shop'} className="shrink-0">
-              <Button
-                variant="secondary"
-                className="h-11 px-6 text-xs sm:text-sm font-black uppercase tracking-wider rounded-md"
-              >
-                {settings.buttonText || 'View All Designs'}
-                <ArrowRight className="ml-1.5 h-4 w-4" />
-              </Button>
-            </Link>
+            {settings.buttonText && (
+              <Link href={settings.buttonLink || '/shop'} className="shrink-0">
+                <Button
+                  variant="secondary"
+                  className="h-11 px-6 text-xs sm:text-sm font-black uppercase tracking-wider rounded-md"
+                >
+                  {settings.buttonText}
+                  <ArrowRight className="ml-1.5 h-4 w-4" />
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 
-        {/* Spotlight Products Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 animate-stagger">
+        {/* Selected Highlight Products Grid */}
+        <div className={gridClass}>
           {displayProducts.map((product) => (
             <div key={product.id} className="relative">
               <ProductCard product={product} />
