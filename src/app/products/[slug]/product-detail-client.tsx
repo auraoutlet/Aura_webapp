@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, Minus, Plus, ChevronDown, Check, Ruler, X, Star } from 'lucide-react';
+import { Heart, Minus, Plus, ChevronDown, Check, Ruler, X, Star, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Product } from '@/lib/types';
 import { formatPrice, calculateDiscountPercentage, cn } from '@/lib/utils';
 import { Button, Badge } from '@/components/ui';
@@ -308,11 +308,34 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
         </div>
 
         {/* Trust Badges Strip */}
-        <div className="grid grid-cols-3 gap-1 py-1.5 px-2 bg-off-white border border-border text-[10px] font-bold text-center text-gray uppercase tracking-wider mb-3.5">
+        <div className="grid grid-cols-3 gap-1 py-1.5 px-2 bg-off-white border border-border text-[10px] font-bold text-center text-gray uppercase tracking-wider mb-2.5">
           <div>240+ GSM Cotton</div>
-          <div className="border-x border-border">Free Pan-India Delivery</div>
+          <div className="border-x border-border">Free Over ₹999</div>
           <div>7-Day Returns</div>
         </div>
+
+        {/* COD Eligibility Badge */}
+        {product.is_cod_available !== false ? (
+          <div className="flex items-center justify-between text-xs py-2 px-3 bg-emerald-50 border border-emerald-200 rounded text-emerald-950 mb-3.5">
+            <div className="flex items-center gap-1.5 font-semibold">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>Cash on Delivery (COD) Available</span>
+            </div>
+            <span className="text-[10px] text-emerald-700 font-medium">
+              ₹200 Online Advance
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between text-xs py-2 px-3 bg-amber-50 border border-amber-200 rounded text-amber-950 mb-3.5">
+            <div className="flex items-center gap-1.5 font-semibold">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <span>Prepaid Orders Only</span>
+            </div>
+            <span className="text-[10px] text-amber-700 font-medium">
+              COD not available for this item
+            </span>
+          </div>
+        )}
 
         {/* Accordions - Compact */}
         <div className="border-t border-border">
@@ -325,7 +348,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
             { 
               id: 'shipping', 
               title: 'Shipping & Delivery', 
-              content: 'Free standard shipping on all orders across India. Orders dispatch within 24-48 hours. Estimated delivery: 3–5 business days.' 
+              content: 'Express shipping: ₹50 inside Tamil Nadu, ₹120 for outside Tamil Nadu (FREE on orders above ₹999). Orders dispatch within 24-48 business hours with live tracking.' 
             },
             { 
               id: 'details', 

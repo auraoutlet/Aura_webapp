@@ -35,6 +35,7 @@ export default function EditProduct({ params }: { params?: Promise<{ id: string 
   const [salePrice, setSalePrice] = useState<string>('');
   const [isActive, setIsActive] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
+  const [isCodAvailable, setIsCodAvailable] = useState(true);
 
   // Images State
   const [images, setImages] = useState<Array<{ id: string; image_url: string; alt_text?: string; is_primary: boolean }>>([]);
@@ -73,6 +74,7 @@ export default function EditProduct({ params }: { params?: Promise<{ id: string 
         setSalePrice(found.sale_price ? found.sale_price.toString() : '');
         setIsActive(found.is_active);
         setIsFeatured(found.is_featured);
+        setIsCodAvailable(found.is_cod_available !== false);
 
         // Populate images
         if (found.images && found.images.length > 0) {
@@ -261,6 +263,7 @@ export default function EditProduct({ params }: { params?: Promise<{ id: string 
       brand: brand.trim() || 'AURA OUTLET',
       is_active: isActive,
       is_featured: isFeatured,
+      is_cod_available: isCodAvailable,
       created_at: product?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString(),
       images: updatedProductImages,
@@ -281,6 +284,7 @@ export default function EditProduct({ params }: { params?: Promise<{ id: string 
         brand: updatedProduct.brand,
         is_active: updatedProduct.is_active,
         is_featured: updatedProduct.is_featured,
+        is_cod_available: updatedProduct.is_cod_available,
         created_at: updatedProduct.created_at,
         updated_at: updatedProduct.updated_at,
       },
@@ -695,6 +699,20 @@ export default function EditProduct({ params }: { params?: Promise<{ id: string 
               <div>
                 <span className="font-bold text-sm block">Featured Product</span>
                 <span className="text-xs text-gray-500">Showcases this item prominently on the homepage hero / featured carousel.</span>
+              </div>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                className="h-5 w-5 rounded-none border-gray-300 text-black focus:ring-black accent-black"
+                checked={isCodAvailable}
+                onChange={(e) => setIsCodAvailable(e.target.checked)}
+              />
+              <div>
+                <span className="font-bold text-sm block">Cash on Delivery (COD) Available</span>
+                <span className="text-xs text-gray-500">
+                  Allow customers to order this product using Cash on Delivery (with ₹200 advance payment). Uncheck to require prepaid checkout only.
+                </span>
               </div>
             </label>
           </div>

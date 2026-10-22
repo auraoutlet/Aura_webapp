@@ -142,6 +142,15 @@ export default function AdminProducts() {
                         <span className={`px-2 py-1 text-xs font-bold rounded-none ${product.is_active ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-500'}`}>
                           {product.is_active ? 'ACTIVE' : 'INACTIVE'}
                         </span>
+                        {product.is_cod_available === false ? (
+                          <span className="block text-[10px] text-amber-700 font-bold uppercase mt-1">
+                            Prepaid Only
+                          </span>
+                        ) : (
+                          <span className="block text-[10px] text-gray-400 font-medium uppercase mt-1">
+                            COD Enabled
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1">

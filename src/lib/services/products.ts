@@ -174,6 +174,7 @@ export async function saveProductToDb(
       brand: productData.brand || 'AURA OUTLET',
       is_active: productData.is_active,
       is_featured: productData.is_featured,
+      is_cod_available: productData.is_cod_available !== undefined ? productData.is_cod_available : true,
       updated_at: new Date().toISOString(),
     });
 

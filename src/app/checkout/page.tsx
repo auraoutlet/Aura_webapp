@@ -53,6 +53,12 @@ export default function CheckoutPage() {
 
   // For COD: ₹50 base shipping + ₹100 COD charge = ₹150 total delivery & handling
   // For Prepaid: standard shipping (₹50 or free above ₹999)
+  // Check if any product in the bag is marked as Prepaid Only (COD disabled by admin)
+  const prepaidOnlyItems = cartItems.filter(
+    (item) => item.product?.is_cod_available === false
+  );
+  const hasPrepaidOnlyItems = prepaidOnlyItems.length > 0;
+
   const isCod = paymentMethod === 'cod';
   const selectedAddress = addresses.find((a) => a.id === selectedAddressId) || null;
   const shippingCalc = calculateShipping({
@@ -76,6 +82,12 @@ export default function CheckoutPage() {
     }
     loadStoreSettings();
   }, []);
+
+  useEffect(() => {
+    if (hasPrepaidOnlyItems && paymentMethod === 'cod') {
+      setPaymentMethod('upi');
+    }
+  }, [hasPrepaidOnlyItems, paymentMethod]);
 
   // Check auth and load addresses from Supabase
   useEffect(() => {
@@ -683,35 +695,51 @@ export default function CheckoutPage() {
                     { 
                       id: 'upi', 
                       label: 'UPI / Net Banking / QR (Prepaid)', 
-                      desc: 'Google Pay, PhonePe, Paytm, BHIM, Instant Net Banking. Enjoy free shipping above ₹999.' 
+                      desc: 'Google Pay, PhonePe, Paytm, BHIM, Instant Net Banking. Enjoy free shipping above ₹999.',
+                      disabled: false,
                     },
                     { 
                       id: 'card', 
                       label: 'Credit / Debit Card (Prepaid)', 
-                      desc: 'Visa, MasterCard, RuPay, Maestro. 100% secure encrypted checkout.' 
+                      desc: 'Visa, MasterCard, RuPay, Maestro. 100% secure encrypted checkout.',
+                      disabled: false,
                     },
                     { 
                       id: 'cod', 
-                      label: 'Cash on Delivery (₹200 Advance)', 
-                      desc: 'Pay ₹200 advance online now to confirm order • ₹150 delivery & COD fee • Pay balance at doorstep.' 
+                      label: hasPrepaidOnlyItems ? 'Cash on Delivery (Unavailable)' : 'Cash on Delivery (₹200 Advance)', 
+                      desc: hasPrepaidOnlyItems 
+                        ? 'Not available because your bag contains prepaid-only designs.' 
+                        : `Pay ₹${codAdvanceAmount} advance online • ₹${shippingCalc.codExtraFee} COD fee • Balance due at doorstep.`,
+                      disabled: hasPrepaidOnlyItems,
                     },
                   ].map((method) => (
                     <div 
                       key={method.id}
-                      onClick={() => setPaymentMethod(method.id as any)}
+                      onClick={() => {
+                        if (method.disabled) return;
+                        setPaymentMethod(method.id as any);
+                      }}
                       className={cn(
-                        "border p-3.5 sm:p-4 cursor-pointer flex items-center justify-between transition-all rounded-md",
-                        paymentMethod === method.id 
+                        "border p-3.5 sm:p-4 flex items-center justify-between transition-all rounded-md",
+                        method.disabled 
+                          ? "opacity-50 cursor-not-allowed bg-gray-50 border-gray-200" 
+                          : "cursor-pointer",
+                        paymentMethod === method.id && !method.disabled
                           ? (method.id === 'cod' ? "border-black bg-amber-50/50 ring-1 ring-black" : "border-black bg-off-white/40 ring-1 ring-black")
-                          : "border-border hover:border-black/50"
+                          : (!method.disabled ? "border-border hover:border-black/50" : "")
                       )}
                     >
                       <div className="pr-2">
                         <div className="flex items-center gap-2">
                           <p className="font-bold text-xs sm:text-sm text-black uppercase tracking-wider">{method.label}</p>
-                          {method.id === 'cod' && (
+                          {method.id === 'cod' && !method.disabled && (
                             <Badge className="bg-amber-600 text-white border-amber-600 text-[10px] px-1.5 py-0 font-extrabold rounded">
                               ADVANCE REQ.
+                            </Badge>
+                          )}
+                          {method.id === 'cod' && method.disabled && (
+                            <Badge className="bg-gray-400 text-white border-gray-400 text-[10px] px-1.5 py-0 font-bold rounded">
+                              PREPAID ONLY
                             </Badge>
                           )}
                         </div>
@@ -719,9 +747,9 @@ export default function CheckoutPage() {
                       </div>
                       <div className={cn(
                         "w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0",
-                        paymentMethod === method.id ? "border-black bg-black" : "border-gray-300"
+                        paymentMethod === method.id && !method.disabled ? "border-black bg-black" : "border-gray-300"
                       )}>
-                        {paymentMethod === method.id && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        {paymentMethod === method.id && !method.disabled && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                       </div>
                     </div>
                   ))}

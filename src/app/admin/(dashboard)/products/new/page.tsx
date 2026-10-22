@@ -39,6 +39,7 @@ export default function NewProduct() {
   const [salePrice, setSalePrice] = useState<string>('999');
   const [isActive, setIsActive] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
+  const [isCodAvailable, setIsCodAvailable] = useState(true);
 
   // Images State
   const [images, setImages] = useState<{ id: string; image_url: string; alt_text?: string; is_primary: boolean }[]>([
@@ -197,6 +198,7 @@ export default function NewProduct() {
       brand: brand || 'AURA OUTLET',
       is_active: isActive,
       is_featured: isFeatured,
+      is_cod_available: isCodAvailable,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       images: images.map((img, idx) => ({
@@ -235,6 +237,7 @@ export default function NewProduct() {
         brand: newProduct.brand,
         is_active: newProduct.is_active,
         is_featured: newProduct.is_featured,
+        is_cod_available: newProduct.is_cod_available,
         created_at: newProduct.created_at,
         updated_at: newProduct.updated_at,
       },
@@ -608,6 +611,18 @@ export default function NewProduct() {
               <div>
                 <span className="font-bold text-sm text-black uppercase">Featured Product</span>
                 <p className="text-xs text-gray-500">Feature this product in the homepage carousel & drop banner</p>
+              </div>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isCodAvailable}
+                onChange={(e) => setIsCodAvailable(e.target.checked)}
+                className="h-5 w-5 accent-black rounded cursor-pointer"
+              />
+              <div>
+                <span className="font-bold text-sm text-black uppercase">Cash on Delivery (COD) Available</span>
+                <p className="text-xs text-gray-500">Allow customers to choose COD with ₹200 advance. Uncheck for Prepaid Only.</p>
               </div>
             </label>
           </div>
