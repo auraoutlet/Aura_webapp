@@ -119,6 +119,7 @@ export default function AdminOrders() {
                   <th className="px-6 py-4 font-medium">Order Number</th>
                   <th className="px-6 py-4 font-medium">Date</th>
                   <th className="px-6 py-4 font-medium">Customer</th>
+                  <th className="px-6 py-4 font-medium">Items</th>
                   <th className="px-6 py-4 font-medium">Total</th>
                   <th className="px-6 py-4 font-medium">Payment</th>
                   <th className="px-6 py-4 font-medium">Status</th>
@@ -135,7 +136,49 @@ export default function AdminOrders() {
                       {new Date(order.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 font-medium text-gray-900">
-                      {order.address?.full_name || order.user_id || 'Guest Customer'}
+                      <div>
+                        <p className="font-bold">{order.address?.full_name || order.user_id || 'Guest Customer'}</p>
+                        {order.address?.state && (
+                          <span className="text-[10px] text-gray-500 font-mono">
+                            {order.address.city ? `${order.address.city}, ` : ''}{order.address.state}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        {(order.items || []).slice(0, 3).map((it, idx) => {
+                          const img = it.product?.images?.find((im: any) => im.is_primary)?.image_url || it.product?.images?.[0]?.image_url;
+                          return (
+                            <div 
+                              key={idx} 
+                              className="w-10 h-12 bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center rounded"
+                              title={`${it.product_name} • Size: ${it.size} • Qty: ${it.quantity}`}
+                            >
+                              {img ? (
+                                <img src={img} alt={it.product_name} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-[8px] font-bold text-gray-400">AO</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {(order.items || []).length > 3 && (
+                          <span className="text-[10px] text-gray-500 font-bold bg-gray-100 px-1.5 py-1 rounded">
+                            +{(order.items || []).length - 3}
+                          </span>
+                        )}
+                        <div className="max-w-[140px] truncate">
+                          <p className="text-xs font-semibold text-black truncate">
+                            {order.items?.[0]?.product_name || 'Item'}
+                          </p>
+                          <p className="text-[10px] text-gray-500">
+                            {order.items?.length === 1 
+                              ? `Size: ${order.items[0]?.size || 'Std'} • Qty: ${order.items[0]?.quantity || 1}` 
+                              : `${order.items?.reduce((s, it) => s + (it.quantity || 1), 0)} items total`}
+                          </p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 font-black text-black">
                       {formatPrice(order.total_amount)}

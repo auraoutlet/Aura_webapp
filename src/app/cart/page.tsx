@@ -177,13 +177,11 @@ export default function CartPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray font-medium">Shipping</span>
-                <span className="font-bold text-black">{shipping === 0 ? 'FREE' : formatPrice(shipping)}</span>
+                <span className="font-bold text-black">{subtotal >= 999 ? 'FREE' : 'At Checkout'}</span>
               </div>
-              {shipping > 0 && (
-                <div className="text-[10px] text-gray mt-0.5">
-                  Free shipping on orders above {formatPrice(999)}
-                </div>
-              )}
+              <div className="text-[10px] text-gray mt-0.5">
+                {subtotal >= 999 ? 'Enjoy Free Delivery across India' : '₹50 Tamil Nadu / ₹120 Outside TN • Free over ₹999'}
+              </div>
             </div>
             
             <div className="flex justify-between font-black text-base border-t border-border pt-3 mb-5 text-black">

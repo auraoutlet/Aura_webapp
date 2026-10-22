@@ -115,6 +115,7 @@ export interface Order {
   total_amount: number;
   payment_status: PaymentStatus;
   order_status: OrderStatus;
+  notes?: string | null;
   created_at: string;
   updated_at: string;
   // Joined

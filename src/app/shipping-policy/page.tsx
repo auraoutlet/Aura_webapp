@@ -56,15 +56,20 @@ export default async function ShippingPolicyPage() {
                 </thead>
                 <tbody className="divide-y divide-border bg-white">
                   <tr>
-                    <td className="p-3.5 font-bold text-black">Prepaid Express Air</td>
-                    <td className="p-3.5 text-gray-600">2 - 4 Business Days</td>
+                    <td className="p-3.5 font-bold text-black">Prepaid Express (Tamil Nadu)</td>
+                    <td className="p-3.5 text-gray-600">1 - 3 Business Days</td>
                     <td className="p-3.5 font-bold text-green-700">₹50 (FREE on orders above ₹999)</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3.5 font-bold text-black">Prepaid Express Air (Outside Tamil Nadu)</td>
+                    <td className="p-3.5 text-gray-600">2 - 5 Business Days</td>
+                    <td className="p-3.5 font-bold text-green-700">₹120 (FREE on orders above ₹999)</td>
                   </tr>
                   <tr>
                     <td className="p-3.5 font-bold text-black">Cash on Delivery (COD)</td>
                     <td className="p-3.5 text-gray-600">3 - 6 Business Days</td>
                     <td className="p-3.5 text-black">
-                      <strong>₹150</strong> (₹50 Express Shipping + ₹100 COD Verification Fee)
+                      Base Shipping (₹50 TN / ₹120 Outside TN) + <strong>₹100 COD Verification Fee</strong>
                     </td>
                   </tr>
                 </tbody>

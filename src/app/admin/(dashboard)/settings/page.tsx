@@ -30,6 +30,9 @@ import {
   HomePageSectionsSettings,
   AdvertisementWidgetSettings,
   PolicyPagesSettings,
+  StoreInfoSettings,
+  ShippingRateRule,
+  DEFAULT_STORE_INFO,
   DEFAULT_HERO_BANNER,
   DEFAULT_PROMO_BANNER,
   DEFAULT_WHY_AURA,
@@ -116,7 +119,14 @@ export default function AdminSettings() {
   const [supportPhone, setSupportPhone] = useState('+91 83009 48486');
   const [storeCity, setStoreCity] = useState('Salem, Tamil Nadu, India');
   const [freeShippingThreshold, setFreeShippingThreshold] = useState('999');
-  const [shippingFee, setShippingFee] = useState('99');
+  const [shippingFeeTN, setShippingFeeTN] = useState('50');
+  const [shippingFeeOutsideTN, setShippingFeeOutsideTN] = useState('120');
+  const [shippingFee, setShippingFee] = useState('50');
+  const [codExtraFee, setCodExtraFee] = useState('100');
+  const [codAdvanceAmount, setCodAdvanceAmount] = useState('200');
+  const [customStateRates, setCustomStateRates] = useState<ShippingRateRule[]>([]);
+  const [newCustomState, setNewCustomState] = useState('');
+  const [newCustomFee, setNewCustomFee] = useState('');
   const [returnDays, setReturnDays] = useState('7');
 
   // 8. Homepage Advertisement Widget
@@ -264,8 +274,13 @@ export default function AdminSettings() {
         if (storeData.supportEmail) setSupportEmail(storeData.supportEmail);
         if (storeData.supportPhone) setSupportPhone(storeData.supportPhone);
         if (storeData.storeCity) setStoreCity(storeData.storeCity);
-        if (storeData.freeShippingThreshold) setFreeShippingThreshold(String(storeData.freeShippingThreshold));
-        if (storeData.shippingFee) setShippingFee(String(storeData.shippingFee));
+        if (storeData.freeShippingThreshold !== undefined) setFreeShippingThreshold(String(storeData.freeShippingThreshold));
+        if (storeData.shippingFeeTN !== undefined) setShippingFeeTN(String(storeData.shippingFeeTN));
+        if (storeData.shippingFeeOutsideTN !== undefined) setShippingFeeOutsideTN(String(storeData.shippingFeeOutsideTN));
+        if (storeData.shippingFee !== undefined) setShippingFee(String(storeData.shippingFee));
+        if (storeData.codExtraFee !== undefined) setCodExtraFee(String(storeData.codExtraFee));
+        if (storeData.codAdvanceAmount !== undefined) setCodAdvanceAmount(String(storeData.codAdvanceAmount));
+        if (Array.isArray(storeData.customStateRates)) setCustomStateRates(storeData.customStateRates);
         if (storeData.returnDays) setReturnDays(String(storeData.returnDays));
       }
 
@@ -344,6 +359,23 @@ export default function AdminSettings() {
       };
       setReviews([newFeatured, ...reviews]);
     }
+  };
+
+  const handleAddCustomStateRate = () => {
+    if (!newCustomState.trim() || !newCustomFee.trim()) return;
+    const feeNum = Number(newCustomFee);
+    if (isNaN(feeNum) || feeNum < 0) return;
+    const cleanState = newCustomState.trim();
+    const existing = customStateRates.filter(
+      (r) => r.state.trim().toLowerCase() !== cleanState.toLowerCase()
+    );
+    setCustomStateRates([...existing, { state: cleanState, fee: feeNum }]);
+    setNewCustomState('');
+    setNewCustomFee('');
+  };
+
+  const handleRemoveCustomStateRate = (stateName: string) => {
+    setCustomStateRates(customStateRates.filter((r) => r.state !== stateName));
   };
 
   const handleToggleAdProduct = (id: string) => {
@@ -437,14 +469,19 @@ export default function AdminSettings() {
       privacyPolicyText: privacyPolicyText.trim(),
     };
 
-    const storePayload = {
+    const storePayload: StoreInfoSettings = {
       storeName,
       tagline,
       supportEmail,
       supportPhone,
       storeCity,
       freeShippingThreshold: Number(freeShippingThreshold) || 999,
-      shippingFee: Number(shippingFee) || 99,
+      shippingFeeTN: Number(shippingFeeTN) || 50,
+      shippingFeeOutsideTN: Number(shippingFeeOutsideTN) || 120,
+      shippingFee: Number(shippingFeeTN) || 50,
+      codExtraFee: Number(codExtraFee) || 100,
+      codAdvanceAmount: Number(codAdvanceAmount) || 200,
+      customStateRates,
       returnDays: Number(returnDays) || 7,
     };
 
@@ -1133,13 +1170,175 @@ export default function AdminSettings() {
                 <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Support Phone / WhatsApp</label>
                 <Input type="tel" value={supportPhone} onChange={(e) => setSupportPhone(e.target.value)} required />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Free Shipping Above (₹)</label>
-                <Input type="number" min="0" value={freeShippingThreshold} onChange={(e) => setFreeShippingThreshold(e.target.value)} required />
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Store / Dispatch City</label>
+                <Input value={storeCity} onChange={(e) => setStoreCity(e.target.value)} required />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Standard Delivery Fee (₹)</label>
-                <Input type="number" min="0" value={shippingFee} onChange={(e) => setShippingFee(e.target.value)} required />
+            </div>
+
+            {/* Location-Based Shipping Rules */}
+            <div className="border-t border-border pt-4 mt-2 space-y-4">
+              <div className="flex items-center gap-2">
+                <Truck className="w-4 h-4 text-black" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-black">Location-Based Shipping Rates & COD Rules</h4>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                <div className="space-y-1.5 bg-off-white p-3 border border-border">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-black">Tamil Nadu Shipping (₹)</label>
+                    <span className="text-[9px] px-1.5 py-0.5 bg-black text-white font-bold uppercase">Local</span>
+                  </div>
+                  <Input 
+                    type="number" 
+                    min="0" 
+                    value={shippingFeeTN} 
+                    onChange={(e) => setShippingFeeTN(e.target.value)} 
+                    placeholder="50"
+                    required 
+                  />
+                  <p className="text-[10px] text-gray">Applied for customers delivering inside Tamil Nadu state.</p>
+                </div>
+
+                <div className="space-y-1.5 bg-off-white p-3 border border-border">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-black">Outside Tamil Nadu (₹)</label>
+                    <span className="text-[9px] px-1.5 py-0.5 bg-amber-600 text-white font-bold uppercase">National</span>
+                  </div>
+                  <Input 
+                    type="number" 
+                    min="0" 
+                    value={shippingFeeOutsideTN} 
+                    onChange={(e) => setShippingFeeOutsideTN(e.target.value)} 
+                    placeholder="120"
+                    required 
+                  />
+                  <p className="text-[10px] text-gray">Applied for all other Indian states (Kerala, Karnataka, etc.).</p>
+                </div>
+
+                <div className="space-y-1.5 bg-off-white p-3 border border-border">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-black">Free Shipping Threshold (₹)</label>
+                  <Input 
+                    type="number" 
+                    min="0" 
+                    value={freeShippingThreshold} 
+                    onChange={(e) => setFreeShippingThreshold(e.target.value)} 
+                    placeholder="999"
+                    required 
+                  />
+                  <p className="text-[10px] text-gray">Prepaid orders at or above this amount receive FREE delivery.</p>
+                </div>
+
+                <div className="space-y-1.5 bg-off-white p-3 border border-border">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-black">COD Extra Handling Fee (₹)</label>
+                  <Input 
+                    type="number" 
+                    min="0" 
+                    value={codExtraFee} 
+                    onChange={(e) => setCodExtraFee(e.target.value)} 
+                    placeholder="100"
+                    required 
+                  />
+                  <p className="text-[10px] text-gray">Additional fee charged when customer selects Cash on Delivery.</p>
+                </div>
+
+                <div className="space-y-1.5 bg-off-white p-3 border border-border">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-black">COD Online Advance (₹)</label>
+                  <Input 
+                    type="number" 
+                    min="0" 
+                    value={codAdvanceAmount} 
+                    onChange={(e) => setCodAdvanceAmount(e.target.value)} 
+                    placeholder="200"
+                    required 
+                  />
+                  <p className="text-[10px] text-gray">Advance payment paid online to confirm COD orders.</p>
+                </div>
+
+                <div className="space-y-1.5 bg-off-white p-3 border border-border">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-black">Return / Exchange Days</label>
+                  <Input 
+                    type="number" 
+                    min="1" 
+                    value={returnDays} 
+                    onChange={(e) => setReturnDays(e.target.value)} 
+                    placeholder="7"
+                    required 
+                  />
+                  <p className="text-[10px] text-gray">Allowed window for customer returns or size exchanges.</p>
+                </div>
+              </div>
+
+              {/* Custom State Rate Overrides */}
+              <div className="bg-white border border-border p-4 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <div>
+                    <h5 className="text-[11px] font-bold uppercase tracking-wider text-black">Custom State Rates (Optional)</h5>
+                    <p className="text-[10px] text-gray">Override the default rate for specific individual states.</p>
+                  </div>
+                </div>
+
+                {customStateRates.length > 0 && (
+                  <div className="overflow-x-auto border border-border">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-off-white border-b border-border text-gray uppercase text-[10px] font-bold">
+                        <tr>
+                          <th className="p-2.5">State Name</th>
+                          <th className="p-2.5">Shipping Fee (₹)</th>
+                          <th className="p-2.5 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border font-medium">
+                        {customStateRates.map((rule) => (
+                          <tr key={rule.state}>
+                            <td className="p-2.5 font-bold text-black">{rule.state}</td>
+                            <td className="p-2.5 font-mono">₹{rule.fee}</td>
+                            <td className="p-2.5 text-right">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveCustomStateRate(rule.state)}
+                                className="text-red-500 hover:text-red-700 text-[11px] font-bold uppercase"
+                              >
+                                Remove
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-2 items-end pt-1">
+                  <div className="flex-1 w-full space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-600">State Name</label>
+                    <Input 
+                      placeholder="e.g. Kerala, Karnataka, Maharashtra" 
+                      value={newCustomState} 
+                      onChange={(e) => setNewCustomState(e.target.value)} 
+                      className="h-9 text-xs"
+                    />
+                  </div>
+                  <div className="w-full sm:w-36 space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-600">Fee (₹)</label>
+                    <Input 
+                      type="number" 
+                      min="0" 
+                      placeholder="e.g. 80" 
+                      value={newCustomFee} 
+                      onChange={(e) => setNewCustomFee(e.target.value)} 
+                      className="h-9 text-xs"
+                    />
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handleAddCustomStateRate} 
+                    className="h-9 text-xs font-bold uppercase whitespace-nowrap"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Add State Rule
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

@@ -9,6 +9,7 @@ import { formatPrice, cn } from '@/lib/utils';
 import { Coupon, Address } from '@/lib/types';
 import { createClient } from '@/lib/supabase/client';
 import { createOrderInDb } from '@/lib/services/orders';
+import { getSetting, StoreInfoSettings, DEFAULT_STORE_INFO, calculateShipping } from '@/lib/services/settings';
 
 type CheckoutStep = 1 | 2 | 3;
 
@@ -46,18 +47,34 @@ export default function CheckoutPage() {
 
   const cartItems = useCartStore((s) => s.items);
   const subtotal = useCartStore((s) => s.getSubtotal());
-  const cartShipping = useCartStore((s) => s.getShipping());
+  const [storeSettings, setStoreSettings] = useState<StoreInfoSettings>(DEFAULT_STORE_INFO);
   const clearCart = useCartStore((s) => s.clearCart);
   const isHydrated = useHydration();
 
   // For COD: ₹50 base shipping + ₹100 COD charge = ₹150 total delivery & handling
   // For Prepaid: standard shipping (₹50 or free above ₹999)
   const isCod = paymentMethod === 'cod';
-  const shipping = isCod ? 150 : cartShipping;
-  const codAdvanceAmount = 200;
+  const selectedAddress = addresses.find((a) => a.id === selectedAddressId) || null;
+  const shippingCalc = calculateShipping({
+    state: selectedAddress?.state,
+    subtotal,
+    isCod,
+    settings: storeSettings,
+  });
+  const shipping = shippingCalc.totalShipping;
+  const codAdvanceAmount = Number(storeSettings.codAdvanceAmount ?? 200);
 
   useEffect(() => {
     useCartStore.persist.rehydrate();
+    async function loadStoreSettings() {
+      try {
+        const s = await getSetting<StoreInfoSettings>('store_info', DEFAULT_STORE_INFO);
+        if (s) setStoreSettings(s);
+      } catch (err) {
+        console.warn('Failed to load store shipping settings:', err);
+      }
+    }
+    loadStoreSettings();
   }, []);
 
   // Check auth and load addresses from Supabase
@@ -263,9 +280,12 @@ export default function CheckoutPage() {
           ? 'Credit / Debit Card' 
           : 'UPI / NetBanking';
 
+      const locationNote = selectedAddress?.state
+        ? `Delivery: ${selectedAddress.state} (${shippingCalc.isTamilNadu ? 'Tamil Nadu' : 'Outside TN'}). Shipping Fee: ₹${shippingCalc.baseShipping}.`
+        : '';
       const orderNotes = isCod 
         ? `COD Order: ₹${amountToPayNow} advance paid online via Cashfree. Remaining balance: ₹${codBalanceDue} to be collected in cash upon doorstep delivery.`
-        : undefined;
+        : (locationNote || undefined);
 
       // Cashfree Payment Flow
       const orderId = `ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
@@ -825,16 +845,23 @@ export default function CheckoutPage() {
                 )}
                 
                 <div className="flex justify-between">
-                  <span className="text-gray">{isCod ? 'Express Shipping' : 'Shipping'}</span>
+                  <span className="text-gray">
+                    {isCod ? 'Express Shipping' : 'Shipping'}
+                    {selectedAddress?.state && (
+                      <span className="ml-1 text-[10px] text-gray-500 font-normal">
+                        ({shippingCalc.isTamilNadu ? 'Tamil Nadu' : selectedAddress.state})
+                      </span>
+                    )}
+                  </span>
                   <span className="font-bold text-black">
-                    {isCod ? '₹50' : (shipping === 0 ? 'FREE' : formatPrice(shipping))}
+                    {shippingCalc.baseShipping === 0 ? 'FREE' : formatPrice(shippingCalc.baseShipping)}
                   </span>
                 </div>
 
                 {isCod && (
                   <div className="flex justify-between text-amber-900 font-semibold">
                     <span>COD Verification & Handling</span>
-                    <span className="font-bold">₹100</span>
+                    <span className="font-bold">{formatPrice(shippingCalc.codExtraFee)}</span>
                   </div>
                 )}
                 

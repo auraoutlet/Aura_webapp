@@ -116,9 +116,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="min-h-screen bg-off-white flex flex-col md:flex-row">
+    <div className="min-h-screen bg-off-white flex flex-col md:flex-row print:bg-white print:block">
       {/* Mobile Header */}
-      <div className="md:hidden bg-black text-white p-4 flex justify-between items-center sticky top-0 z-20">
+      <div className="md:hidden bg-black text-white p-4 flex justify-between items-center sticky top-0 z-20 print:hidden">
         <img src="/logo-white.png" alt="AURA OUTLET" className="h-10 w-auto object-contain" />
         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
           {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
@@ -135,7 +135,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed md:static inset-y-0 left-0 z-40 w-64 bg-black text-white flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 border-r border-white/10 shrink-0",
+        "fixed md:static inset-y-0 left-0 z-40 w-64 bg-black text-white flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 border-r border-white/10 shrink-0 print:hidden",
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="p-6 border-b border-white/10 flex items-center justify-between">
@@ -191,7 +191,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-x-hidden p-6 md:p-8">
+      <main className="flex-1 overflow-x-hidden p-6 md:p-8 print:p-0 print:m-0 print:overflow-visible">
         {children}
       </main>
     </div>

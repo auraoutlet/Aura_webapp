@@ -80,6 +80,103 @@ export interface PolicyPagesSettings {
   privacyPolicyText: string;
 }
 
+export interface ShippingRateRule {
+  state: string; // e.g. "Karnataka", "Kerala", "Maharashtra"
+  fee: number;
+}
+
+export interface StoreInfoSettings {
+  storeName: string;
+  tagline: string;
+  supportEmail: string;
+  supportPhone: string;
+  storeCity: string;
+  returnDays: number;
+  freeShippingThreshold: number;
+  shippingFeeTN: number; // Inside Tamil Nadu delivery fee (default: 50)
+  shippingFeeOutsideTN: number; // Outside Tamil Nadu delivery fee (default: 120)
+  shippingFee: number; // Fallback standard delivery fee
+  codExtraFee: number; // Additional COD verification & handling fee (default: 100)
+  codAdvanceAmount: number; // COD advance payable online (default: 200)
+  customStateRates?: ShippingRateRule[];
+}
+
+export const DEFAULT_STORE_INFO: StoreInfoSettings = {
+  storeName: 'AURA OUTLET',
+  tagline: 'Heavyweight Streetwear | Monochrome Quality',
+  supportEmail: 'support@auraoutlet.com',
+  supportPhone: '+91 83009 48486',
+  storeCity: 'Salem, Tamil Nadu, India',
+  returnDays: 7,
+  freeShippingThreshold: 999,
+  shippingFeeTN: 50,
+  shippingFeeOutsideTN: 120,
+  shippingFee: 50,
+  codExtraFee: 100,
+  codAdvanceAmount: 200,
+  customStateRates: [],
+};
+
+export function isTamilNaduState(state?: string | null): boolean {
+  if (!state) return false;
+  const s = state.trim().toLowerCase().replace(/[\s\-_]/g, '');
+  return s === 'tamilnadu' || s === 'tn' || s.includes('tamilnadu') || s.includes('tamil');
+}
+
+export function calculateShipping({
+  state,
+  subtotal,
+  isCod,
+  settings,
+}: {
+  state?: string | null;
+  subtotal: number;
+  isCod?: boolean;
+  settings?: Partial<StoreInfoSettings> | null;
+}): {
+  baseShipping: number;
+  isFreeShipping: boolean;
+  codExtraFee: number;
+  totalShipping: number;
+  locationLabel: string;
+  isTamilNadu: boolean;
+} {
+  const tnFee = Number(settings?.shippingFeeTN ?? 50);
+  const outsideFee = Number(settings?.shippingFeeOutsideTN ?? 120);
+  const freeThreshold = Number(settings?.freeShippingThreshold ?? 999);
+  const codExtra = Number(settings?.codExtraFee ?? 100);
+
+  const isTN = isTamilNaduState(state);
+  
+  // Check if there is a custom state rate override
+  let baseFee = isTN ? tnFee : outsideFee;
+  let locLabel = isTN ? 'Tamil Nadu' : (state ? `Outside TN (${state.trim()})` : 'Outside Tamil Nadu');
+
+  if (state && settings?.customStateRates && settings.customStateRates.length > 0) {
+    const matched = settings.customStateRates.find(
+      (r) => r.state.trim().toLowerCase() === state.trim().toLowerCase()
+    );
+    if (matched) {
+      baseFee = Number(matched.fee);
+      locLabel = matched.state;
+    }
+  }
+
+  const isFree = subtotal > 0 && subtotal >= freeThreshold;
+  const actualBaseShipping = isFree ? 0 : baseFee;
+  const codFee = isCod ? codExtra : 0;
+  const totalShipping = actualBaseShipping + codFee;
+
+  return {
+    baseShipping: actualBaseShipping,
+    isFreeShipping: isFree,
+    codExtraFee: codFee,
+    totalShipping,
+    locationLabel: locLabel,
+    isTamilNadu: isTN,
+  };
+}
+
 export const DEFAULT_ADVERTISEMENT_WIDGET: AdvertisementWidgetSettings = {
   isEnabled: true,
   tag: 'Curated Streetwear Picks',
