@@ -219,6 +219,24 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 );
               })()}
               <p>Delivery: Standard Courier (3-5 business days)</p>
+              {(order.tracking_id || order.courier_name) && (
+                <div className="mt-2 pt-2 border-t border-border space-y-1">
+                  <p className="font-bold uppercase tracking-wider text-black text-xs">Courier & Tracking</p>
+                  <p className="text-xs">Partner: <strong className="text-black font-semibold">{order.courier_name || 'Standard Logistics'}</strong></p>
+                  {order.tracking_id && (
+                    <p className="text-xs">Tracking Number: <strong className="font-mono text-black">{order.tracking_id}</strong></p>
+                  )}
+                  {order.tracking_url ? (
+                    <a href={order.tracking_url} target="_blank" rel="noopener noreferrer" className="inline-block mt-1 text-xs text-black font-bold underline">
+                      Track Package Online &rarr;
+                    </a>
+                  ) : (
+                    <Link href={`/orders?number=${order.order_number}`} className="inline-block mt-1 text-xs text-black font-bold underline">
+                      Track Live Progress &rarr;
+                    </Link>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

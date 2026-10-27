@@ -14,7 +14,8 @@ import {
   ArrowRight, 
   ShieldCheck, 
   MapPin, 
-  CreditCard 
+  CreditCard,
+  ExternalLink
 } from 'lucide-react';
 import { Order, OrderStatus, PaymentStatus } from '@/lib/types';
 import { getOrderById } from '@/lib/services/orders';
@@ -282,6 +283,54 @@ function TrackOrderContent() {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* Courier & Tracking Details Card */}
+            {(order.tracking_id || order.courier_name) && (
+              <div className="p-4 bg-blue-50/70 border border-blue-200 rounded flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Truck className="w-4 h-4 text-blue-900" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-blue-950">
+                      Dispatched via {order.courier_name || 'Courier Partner'}
+                    </span>
+                  </div>
+                  {order.tracking_id && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-xs text-gray-600">AWB / Tracking Number:</span>
+                      <strong className="font-mono text-sm text-black bg-white px-2 py-0.5 border border-blue-200 rounded">
+                        {order.tracking_id}
+                      </strong>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {order.tracking_id && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(order.tracking_id || '');
+                        alert('Tracking ID copied to clipboard!');
+                      }}
+                      className="h-8 text-xs font-bold uppercase bg-white border-blue-300 text-blue-900 hover:bg-blue-100"
+                    >
+                      Copy ID
+                    </Button>
+                  )}
+                  {order.tracking_url && (
+                    <a
+                      href={order.tracking_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center h-8 px-3 text-xs font-bold uppercase tracking-wider bg-black text-white hover:bg-neutral-800 rounded transition-colors"
+                    >
+                      Track Package <ExternalLink className="w-3 h-3 ml-1" />
+                    </a>
+                  )}
                 </div>
               </div>
             )}

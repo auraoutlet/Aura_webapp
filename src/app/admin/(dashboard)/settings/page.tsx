@@ -128,6 +128,8 @@ export default function AdminSettings() {
   const [newCustomState, setNewCustomState] = useState('');
   const [newCustomFee, setNewCustomFee] = useState('');
   const [returnDays, setReturnDays] = useState('7');
+  const [shippingItemThreshold, setShippingItemThreshold] = useState('2');
+  const [shippingExtraPerItem, setShippingExtraPerItem] = useState('50');
 
   // 8. Homepage Advertisement Widget
   const [adEnabled, setAdEnabled] = useState(DEFAULT_ADVERTISEMENT_WIDGET.isEnabled);
@@ -282,6 +284,8 @@ export default function AdminSettings() {
         if (storeData.codAdvanceAmount !== undefined) setCodAdvanceAmount(String(storeData.codAdvanceAmount));
         if (Array.isArray(storeData.customStateRates)) setCustomStateRates(storeData.customStateRates);
         if (storeData.returnDays) setReturnDays(String(storeData.returnDays));
+        if (storeData.shippingItemThreshold !== undefined) setShippingItemThreshold(String(storeData.shippingItemThreshold));
+        if (storeData.shippingExtraPerItem !== undefined) setShippingExtraPerItem(String(storeData.shippingExtraPerItem));
       }
 
       setLoading(false);
@@ -483,6 +487,8 @@ export default function AdminSettings() {
       codAdvanceAmount: Number(codAdvanceAmount) || 200,
       customStateRates,
       returnDays: Number(returnDays) || 7,
+      shippingItemThreshold: Number(shippingItemThreshold) || 2,
+      shippingExtraPerItem: Number(shippingExtraPerItem) || 50,
     };
 
     await Promise.all([
@@ -1266,6 +1272,32 @@ export default function AdminSettings() {
                     required 
                   />
                   <p className="text-[10px] text-gray">Allowed window for customer returns or size exchanges.</p>
+                </div>
+
+                <div className="space-y-1.5 bg-off-white p-3 border border-border">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-black">Bulk Item Threshold</label>
+                  <Input 
+                    type="number" 
+                    min="1" 
+                    value={shippingItemThreshold} 
+                    onChange={(e) => setShippingItemThreshold(e.target.value)} 
+                    placeholder="2"
+                    required 
+                  />
+                  <p className="text-[10px] text-gray">Base courier bracket (e.g. 2 items). Orders exceeding this incur bulk weight surcharge.</p>
+                </div>
+
+                <div className="space-y-1.5 bg-off-white p-3 border border-border">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-black">Extra Shipping Per Item (₹)</label>
+                  <Input 
+                    type="number" 
+                    min="0" 
+                    value={shippingExtraPerItem} 
+                    onChange={(e) => setShippingExtraPerItem(e.target.value)} 
+                    placeholder="50"
+                    required 
+                  />
+                  <p className="text-[10px] text-gray">Added fee for each additional product onwards (e.g. ₹50 per extra tee).</p>
                 </div>
               </div>
 

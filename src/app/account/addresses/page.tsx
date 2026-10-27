@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { SectionHeading, Button, Badge, Input, EmptyState, Spinner } from '@/components/ui';
 import { Plus, Edit2, Trash2, MapPin, Check } from 'lucide-react';
 import { Address } from '@/lib/types';
+import { INDIAN_STATES_LIST, getDistrictsForState } from '@/lib/services/india-locations';
 import { createClient } from '@/lib/supabase/client';
 
 export default function AddressesPage() {
@@ -227,18 +228,56 @@ export default function AddressesPage() {
                 onChange={(e) => setFormData({ ...formData, address_line_2: e.target.value })} 
               />
             </div>
-            <Input 
-              label="City" 
-              value={formData.city || ''} 
-              onChange={(e) => setFormData({ ...formData, city: e.target.value })} 
-              required 
-            />
-            <Input 
-              label="State" 
-              value={formData.state || ''} 
-              onChange={(e) => setFormData({ ...formData, state: e.target.value })} 
-              required 
-            />
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-black mb-1.5">
+                State *
+              </label>
+              <select
+                value={formData.state || ''}
+                onChange={(e) => {
+                  setFormData({ ...formData, state: e.target.value, city: '' });
+                }}
+                required
+                className="w-full h-10 px-3 border border-border text-xs uppercase bg-white font-medium focus:border-black focus:outline-none rounded"
+              >
+                <option value="">-- SELECT STATE --</option>
+                {INDIAN_STATES_LIST.map((st) => (
+                  <option key={st} value={st}>
+                    {st} {st === 'Tamil Nadu' ? '(Local Delivery - ₹50)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-black mb-1.5">
+                District / City *
+              </label>
+              {formData.state && getDistrictsForState(formData.state).length > 0 ? (
+                <select
+                  value={formData.city || ''}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  required
+                  className="w-full h-10 px-3 border border-border text-xs uppercase bg-white font-medium focus:border-black focus:outline-none rounded"
+                >
+                  <option value="">-- SELECT DISTRICT --</option>
+                  {getDistrictsForState(formData.state).map((dist) => (
+                    <option key={dist} value={dist}>
+                      {dist}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <Input 
+                  label=""
+                  placeholder={formData.state ? "Enter your city/district" : "Select state first"} 
+                  value={formData.city || ''} 
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })} 
+                  required 
+                  disabled={!formData.state}
+                />
+              )}
+            </div>
             <Input 
               label="Pincode" 
               value={formData.pincode || ''} 

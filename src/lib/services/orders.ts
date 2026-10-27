@@ -373,3 +373,92 @@ export async function rollbackPendingOrder(orderId: string): Promise<boolean> {
   }
 }
 
+export async function updateOrderTrackingInDb(
+  orderId: string,
+  tracking: {
+    tracking_id?: string | null;
+    courier_name?: string | null;
+    tracking_url?: string | null;
+    order_status?: OrderStatus;
+  }
+): Promise<boolean> {
+  try {
+    const supabase = createClient();
+    const updatePayload: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (tracking.tracking_id !== undefined) updatePayload.tracking_id = tracking.tracking_id;
+    if (tracking.courier_name !== undefined) updatePayload.courier_name = tracking.courier_name;
+    if (tracking.tracking_url !== undefined) updatePayload.tracking_url = tracking.tracking_url;
+    if (tracking.order_status !== undefined) updatePayload.order_status = tracking.order_status;
+
+    const { error } = await supabase
+      .from('orders')
+      .update(updatePayload)
+      .eq('id', orderId);
+
+    if (error) {
+      console.error('updateOrderTrackingInDb error:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('updateOrderTrackingInDb error:', err);
+    return false;
+  }
+}
+
+export async function deleteOrderFromDb(orderId: string): Promise<boolean> {
+  try {
+    const supabase = createClient();
+    // 1. Delete associated order items
+    await supabase.from('order_items').delete().eq('order_id', orderId);
+    // 2. Delete associated payments
+    await supabase.from('payments').delete().eq('order_id', orderId);
+    // 3. Delete the order
+    const { error } = await supabase.from('orders').delete().eq('id', orderId);
+    if (error) {
+      console.error('deleteOrderFromDb error:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('deleteOrderFromDb error:', err);
+    return false;
+  }
+}
+
+export async function deletePendingOrFailedOrders(): Promise<{ success: boolean; count: number }> {
+  try {
+    const supabase = createClient();
+    // Fetch pending or failed order ids
+    const { data: staleOrders, error: fetchErr } = await supabase
+      .from('orders')
+      .select('id')
+      .or('payment_status.in.(PENDING,FAILED),order_status.in.(CANCELLED)');
+
+    if (fetchErr || !staleOrders || staleOrders.length === 0) {
+      return { success: true, count: 0 };
+    }
+
+    const ids = staleOrders.map((o) => o.id);
+
+    // Delete associated order items & payments
+    await supabase.from('order_items').delete().in('order_id', ids);
+    await supabase.from('payments').delete().in('order_id', ids);
+
+    // Delete orders
+    const { error: delErr } = await supabase.from('orders').delete().in('id', ids);
+    if (delErr) {
+      console.error('deletePendingOrFailedOrders error:', delErr);
+      return { success: false, count: 0 };
+    }
+
+    return { success: true, count: ids.length };
+  } catch (err) {
+    console.error('deletePendingOrFailedOrders fatal error:', err);
+    return { success: false, count: 0 };
+  }
+}
+

@@ -10,6 +10,7 @@ import { Coupon, Address } from '@/lib/types';
 import { createClient } from '@/lib/supabase/client';
 import { createOrderInDb } from '@/lib/services/orders';
 import { getSetting, StoreInfoSettings, DEFAULT_STORE_INFO, calculateShipping } from '@/lib/services/settings';
+import { INDIAN_STATES_LIST, getDistrictsForState } from '@/lib/services/india-locations';
 
 type CheckoutStep = 1 | 2 | 3;
 
@@ -61,9 +62,11 @@ export default function CheckoutPage() {
 
   const isCod = paymentMethod === 'cod';
   const selectedAddress = addresses.find((a) => a.id === selectedAddressId) || null;
+  const totalItemQuantity = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
   const shippingCalc = calculateShipping({
     state: selectedAddress?.state,
     subtotal,
+    totalQuantity: totalItemQuantity,
     isCod,
     settings: storeSettings,
   });
@@ -560,18 +563,56 @@ export default function CheckoutPage() {
                           onChange={(e) => setNewAddressLine2(e.target.value)}
                         />
                       </div>
-                      <Input 
-                        label="City" 
-                        required 
-                        value={newCity}
-                        onChange={(e) => setNewCity(e.target.value)}
-                      />
-                      <Input 
-                        label="State" 
-                        required 
-                        value={newState}
-                        onChange={(e) => setNewState(e.target.value)}
-                      />
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-black mb-1.5">
+                          State *
+                        </label>
+                        <select
+                          value={newState}
+                          onChange={(e) => {
+                            setNewState(e.target.value);
+                            setNewCity('');
+                          }}
+                          required
+                          className="w-full h-10 px-3 border border-border text-xs uppercase bg-white font-medium focus:border-black focus:outline-none rounded"
+                        >
+                          <option value="">-- SELECT STATE --</option>
+                          {INDIAN_STATES_LIST.map((st) => (
+                            <option key={st} value={st}>
+                              {st} {st === 'Tamil Nadu' ? '(Local Delivery - ₹50)' : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-black mb-1.5">
+                          District / City *
+                        </label>
+                        {newState && getDistrictsForState(newState).length > 0 ? (
+                          <select
+                            value={newCity}
+                            onChange={(e) => setNewCity(e.target.value)}
+                            required
+                            className="w-full h-10 px-3 border border-border text-xs uppercase bg-white font-medium focus:border-black focus:outline-none rounded"
+                          >
+                            <option value="">-- SELECT DISTRICT --</option>
+                            {getDistrictsForState(newState).map((dist) => (
+                              <option key={dist} value={dist}>
+                                {dist}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <Input 
+                            placeholder={newState ? "Enter your city/district" : "Select state first"} 
+                            required 
+                            value={newCity}
+                            onChange={(e) => setNewCity(e.target.value)}
+                            disabled={!newState}
+                          />
+                        )}
+                      </div>
                       <Input 
                         label="Pincode" 
                         required 
@@ -885,6 +926,15 @@ export default function CheckoutPage() {
                     {shippingCalc.baseShipping === 0 ? 'FREE' : formatPrice(shippingCalc.baseShipping)}
                   </span>
                 </div>
+
+                {shippingCalc.quantitySurcharge > 0 && (
+                  <div className="flex justify-between text-blue-900 font-semibold bg-blue-50/70 p-1.5 rounded text-xs">
+                    <span>
+                      Bulk Item Surcharge ({shippingCalc.extraItemsCount} extra {shippingCalc.extraItemsCount === 1 ? 'tee' : 'tees'})
+                    </span>
+                    <span className="font-bold">+{formatPrice(shippingCalc.quantitySurcharge)}</span>
+                  </div>
+                )}
 
                 {isCod && (
                   <div className="flex justify-between text-amber-900 font-semibold">

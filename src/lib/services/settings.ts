@@ -98,6 +98,8 @@ export interface StoreInfoSettings {
   shippingFee: number; // Fallback standard delivery fee
   codExtraFee: number; // Additional COD verification & handling fee (default: 100)
   codAdvanceAmount: number; // COD advance payable online (default: 200)
+  shippingItemThreshold: number; // Max items covered under base shipping before weight surcharge (default: 2)
+  shippingExtraPerItem: number; // Incremental shipping charge per additional item (default: 50)
   customStateRates?: ShippingRateRule[];
 }
 
@@ -114,6 +116,8 @@ export const DEFAULT_STORE_INFO: StoreInfoSettings = {
   shippingFee: 50,
   codExtraFee: 100,
   codAdvanceAmount: 200,
+  shippingItemThreshold: 2,
+  shippingExtraPerItem: 50,
   customStateRates: [],
 };
 
@@ -126,15 +130,20 @@ export function isTamilNaduState(state?: string | null): boolean {
 export function calculateShipping({
   state,
   subtotal,
+  totalQuantity = 1,
   isCod,
   settings,
 }: {
   state?: string | null;
   subtotal: number;
+  totalQuantity?: number;
   isCod?: boolean;
   settings?: Partial<StoreInfoSettings> | null;
 }): {
   baseShipping: number;
+  quantitySurcharge: number;
+  extraItemsCount: number;
+  totalQuantity: number;
   isFreeShipping: boolean;
   codExtraFee: number;
   totalShipping: number;
@@ -145,6 +154,8 @@ export function calculateShipping({
   const outsideFee = Number(settings?.shippingFeeOutsideTN ?? 120);
   const freeThreshold = Number(settings?.freeShippingThreshold ?? 999);
   const codExtra = Number(settings?.codExtraFee ?? 100);
+  const itemThreshold = Number(settings?.shippingItemThreshold ?? 2);
+  const extraPerItem = Number(settings?.shippingExtraPerItem ?? 50);
 
   const isTN = isTamilNaduState(state);
   
@@ -162,13 +173,22 @@ export function calculateShipping({
     }
   }
 
+  // Weight / Bulk Quantity Surcharge:
+  // When quantity > 2 items, increment shipping by ₹50 for each next product onwards
+  const safeQty = Math.max(1, totalQuantity || 1);
+  const extraItemsCount = Math.max(0, safeQty - itemThreshold);
+  const quantitySurcharge = extraItemsCount * extraPerItem;
+
   const isFree = subtotal > 0 && subtotal >= freeThreshold;
   const actualBaseShipping = isFree ? 0 : baseFee;
   const codFee = isCod ? codExtra : 0;
-  const totalShipping = actualBaseShipping + codFee;
+  const totalShipping = actualBaseShipping + quantitySurcharge + codFee;
 
   return {
     baseShipping: actualBaseShipping,
+    quantitySurcharge,
+    extraItemsCount,
+    totalQuantity: safeQty,
     isFreeShipping: isFree,
     codExtraFee: codFee,
     totalShipping,
