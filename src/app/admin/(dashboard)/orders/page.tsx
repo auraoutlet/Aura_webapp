@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { formatPrice } from '@/lib/utils';
 import { Search, Eye, Loader2, Trash2, MessageCircle, AlertCircle, RefreshCw } from 'lucide-react';
-import { Input, Button, TablePagination } from '@/components/ui';
+import { Input, Button, TablePagination, WhatsAppIcon } from '@/components/ui';
 import { getAllOrders, deleteOrderFromDb, deletePendingOrFailedOrders } from '@/lib/services/orders';
 import { Order } from '@/lib/types';
 
@@ -127,22 +127,22 @@ export default function AdminOrders() {
     const cleanPhone = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
     const customerName = order.address?.full_name || 'Customer';
 
-    let message = `Hi ${customerName}! 🖤 Greetings from *AURA OUTLET*.\n\nRegarding your Order *#${order.order_number}*:\nStatus: *${order.order_status}*`;
+    const trackUrl = order.tracking_url || 
+      (order.courier_name?.toLowerCase().includes('st') 
+        ? 'https://stcourier.com/track/shipment' 
+        : `https://www.auraoutlet.in/orders?number=${order.order_number}`);
+
+    let message = `*AURA OUTLET* — Order Update\n\nHi *${customerName}*! Regarding your Order *#${order.order_number}*:\nStatus: *${order.order_status}*`;
 
     if (order.tracking_id) {
-      message += `\nCourier: *${order.courier_name || 'Standard Courier'}*\nTracking ID: *${order.tracking_id}*`;
-      if (order.tracking_url) {
-        message += `\nTrack: ${order.tracking_url}`;
-      } else {
-        message += `\nTrack your order: https://www.auraoutlet.in/orders?number=${order.order_number}`;
-      }
+      message += `\n\n*Shipment Details:*\n• Courier: *${order.courier_name || 'ST Courier'}*\n• Tracking ID: *${order.tracking_id}*\n• Track Link: ${trackUrl}`;
     } else {
-      message += `\nTrack your order anytime: https://www.auraoutlet.in/orders?number=${order.order_number}`;
+      message += `\n\nTrack online anytime:\nhttps://www.auraoutlet.in/orders?number=${order.order_number}`;
     }
 
     message += `\n\nThank you for choosing Aura Outlet! Reach us here if you have any questions.`;
 
-    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    return `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
   };
 
   return (
@@ -359,10 +359,10 @@ export default function AdminOrders() {
                               href={waLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded transition-colors"
+                              className="inline-flex items-center justify-center p-2 hover:bg-emerald-50 rounded transition-colors"
                               title="Send WhatsApp update to customer"
                             >
-                              <MessageCircle size={16} />
+                              <WhatsAppIcon className="w-4 h-4 text-[#25D366]" fill="#25D366" />
                             </a>
                           )}
                           <Link

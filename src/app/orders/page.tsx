@@ -321,16 +321,20 @@ function TrackOrderContent() {
                       Copy ID
                     </Button>
                   )}
-                  {order.tracking_url && (
-                    <a
-                      href={order.tracking_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center h-8 px-3 text-xs font-bold uppercase tracking-wider bg-black text-white hover:bg-neutral-800 rounded transition-colors"
-                    >
-                      Track Package <ExternalLink className="w-3 h-3 ml-1" />
-                    </a>
-                  )}
+                  {(() => {
+                    const trackLink = order.tracking_url || (order.courier_name?.toLowerCase().includes('st') ? 'https://stcourier.com/track/shipment' : null);
+                    if (!trackLink) return null;
+                    return (
+                      <a
+                        href={trackLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center h-8 px-3 text-xs font-bold uppercase tracking-wider bg-black text-white hover:bg-neutral-800 rounded transition-colors"
+                      >
+                        Track on {order.courier_name || 'Courier'} <ExternalLink className="w-3 h-3 ml-1" />
+                      </a>
+                    );
+                  })()}
                 </div>
               </div>
             )}

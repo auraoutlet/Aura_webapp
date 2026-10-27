@@ -13,3 +13,4 @@ export { SectionHeading } from './section-heading';
 export { EmptyState } from './empty-state';
 export { TablePagination } from './table-pagination';
 export type { TablePaginationProps } from './table-pagination';
+export { WhatsAppIcon } from './whatsapp-icon';

@@ -17,7 +17,7 @@ import {
   Copy, 
   Check 
 } from 'lucide-react';
-import { Button, Select, Input } from '@/components/ui';
+import { Button, Select, Input, WhatsAppIcon } from '@/components/ui';
 import { formatPrice } from '@/lib/utils';
 import { Order, OrderStatus } from '@/lib/types';
 import { 
@@ -73,9 +73,13 @@ export default function AdminOrderDetail({ params }: { params?: Promise<{ id: st
         if (found) {
           setOrder(found);
           setSelectedStatus(found.order_status);
-          setCourierName(found.courier_name || '');
+          const cName = found.courier_name || 'ST Courier';
+          setCourierName(cName);
           setTrackingId(found.tracking_id || '');
-          setTrackingUrl(found.tracking_url || '');
+          setTrackingUrl(
+            found.tracking_url ||
+            (cName.toLowerCase().includes('st') ? 'https://stcourier.com/track/shipment' : '')
+          );
         }
       }
     }
@@ -111,7 +115,7 @@ export default function AdminOrderDetail({ params }: { params?: Promise<{ id: st
       if (c.includes('delhivery')) {
         resolvedUrl = `https://www.delhivery.com/track/package/${trackingId.trim()}`;
       } else if (c.includes('st')) {
-        resolvedUrl = 'https://stcourier.com/track';
+        resolvedUrl = 'https://stcourier.com/track/shipment';
       } else if (c.includes('dtdc')) {
         resolvedUrl = 'https://www.dtdc.in/tracking.asp';
       } else if (c.includes('post')) {
@@ -191,14 +195,16 @@ export default function AdminOrderDetail({ params }: { params?: Promise<{ id: st
     .join('\n');
 
   let waMessage = '';
+  const resolvedTrackUrl = trackingUrl || (courierName?.toLowerCase().includes('st') ? 'https://stcourier.com/track/shipment' : `https://www.auraoutlet.in/orders?number=${order.order_number}`);
+
   if (selectedStatus === 'SHIPPED') {
-    waMessage = `Hi ${customerName}! 🚀 Your Aura Outlet order *#${order.order_number}* has been dispatched!\n\n📦 *Order Items:*\n${itemListString}\n\n🚚 *Courier Partner:* ${courierName || 'Standard Courier'}\n🔢 *Tracking ID / AWB:* ${trackingId || 'In Transit'}\n${trackingUrl ? `🔗 *Track your parcel:* ${trackingUrl}` : `🔗 *Track your parcel:* https://www.auraoutlet.in/orders?number=${order.order_number}`}\n\nThank you for shopping with *AURA OUTLET*! Feel free to reply if you need any help. 🖤`;
+    waMessage = `*AURA OUTLET* — Dispatch Update\n\nHi *${customerName}*! Your order *#${order.order_number}* has been dispatched.\n\n*Shipment Details:*\n• Courier: *${courierName || 'ST Courier'}*\n• Tracking ID / AWB: *${trackingId || 'In Transit'}*\n• Track Shipment: ${resolvedTrackUrl}\n\n*Order Items:*\n${itemListString}\n\nTrack online anytime:\nhttps://www.auraoutlet.in/orders?number=${order.order_number}\n\nThank you for choosing AURA OUTLET! Reply here if you need any assistance.`;
   } else if (selectedStatus === 'DELIVERED') {
-    waMessage = `Hi ${customerName}! 🎉 Your Aura Outlet order *#${order.order_number}* has been successfully delivered!\n\nWe hope you love your heavyweight fit. Tag us *@auraoutlet* in your photos! 🖤\n\nNeed support? Reply to this message anytime.`;
+    waMessage = `*AURA OUTLET* — Order Delivered\n\nHi *${customerName}*! Your order *#${order.order_number}* has been successfully delivered!\n\nWe hope you love your heavyweight streetwear fit. Feel free to reach out to us here for any queries.\n\nThank you for choosing AURA OUTLET!`;
   } else if (selectedStatus === 'CONFIRMED') {
-    waMessage = `Hi ${customerName}! ✅ Your Aura Outlet order *#${order.order_number}* has been confirmed!\n\n📦 *Items:*\n${itemListString}\n💰 *Total:* ${formatPrice(order.total_amount)}\n\nOur team is currently preparing your parcel for dispatch. We will send you the courier tracking ID shortly!\n\nThank you for choosing *AURA OUTLET*! 🖤`;
+    waMessage = `*AURA OUTLET* — Order Confirmed\n\nHi *${customerName}*! Your order *#${order.order_number}* is confirmed and being prepped for dispatch.\n\n*Items in Order:*\n${itemListString}\nTotal: ${formatPrice(order.total_amount)}\n\nWe will share your courier tracking ID as soon as the package is handed over!\n\nThank you for choosing AURA OUTLET!`;
   } else {
-    waMessage = `Hi ${customerName}! 🖤 Regarding your Aura Outlet order *#${order.order_number}*:\n\nCurrent Status: *${selectedStatus}*\n\nTrack your order anytime: https://www.auraoutlet.in/orders?number=${order.order_number}\n\nReach us here if you have any questions!`;
+    waMessage = `*AURA OUTLET* — Order Status\n\nHi *${customerName}*! Regarding your order *#${order.order_number}*:\nCurrent Status: *${selectedStatus}*\n\nTrack online anytime:\nhttps://www.auraoutlet.in/orders?number=${order.order_number}\n\nReach us here for any questions.`;
   }
 
   const handleCopyWAMessage = () => {
@@ -310,8 +316,21 @@ export default function AdminOrderDetail({ params }: { params?: Promise<{ id: st
                         <button
                           key={c}
                           type="button"
-                          onClick={() => setCourierName(c)}
-                          className="text-[10px] bg-gray-100 hover:bg-black hover:text-white px-2 py-0.5 rounded transition-colors text-gray-700 font-medium"
+                          onClick={() => {
+                            setCourierName(c);
+                            if (c.toLowerCase().includes('st')) {
+                              setTrackingUrl('https://stcourier.com/track/shipment');
+                            } else if (c.toLowerCase().includes('dtdc')) {
+                              setTrackingUrl('https://www.dtdc.in/tracking.asp');
+                            } else if (c.toLowerCase().includes('delhivery')) {
+                              setTrackingUrl(trackingId ? `https://www.delhivery.com/track/package/${trackingId}` : 'https://www.delhivery.com/tracking');
+                            } else if (c.toLowerCase().includes('post')) {
+                              setTrackingUrl('https://www.indiapost.gov.in/_layouts/15/dpt.cept.tracking/trackconsignment.aspx');
+                            }
+                          }}
+                          className={`text-[10px] px-2 py-0.5 rounded transition-colors font-medium ${
+                            courierName === c ? 'bg-black text-white font-bold' : 'bg-gray-100 hover:bg-black hover:text-white text-gray-700'
+                          }`}
                         >
                           {c}
                         </button>
@@ -361,16 +380,18 @@ export default function AdminOrderDetail({ params }: { params?: Promise<{ id: st
             </div>
 
             {/* WhatsApp Customer Alert Card */}
-            <div className="bg-emerald-50/70 border border-emerald-300 p-5 rounded">
+            <div className="bg-emerald-50/80 border border-emerald-300 p-5 rounded">
               <div className="flex items-center justify-between pb-3 border-b border-emerald-200 mb-3">
                 <div className="flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5 text-emerald-700" />
+                  <div className="w-6 h-6 rounded-full bg-[#25D366] flex items-center justify-center text-white shrink-0 shadow-sm">
+                    <WhatsAppIcon className="w-4 h-4" fill="white" />
+                  </div>
                   <h2 className="font-black uppercase tracking-wider text-sm text-emerald-950">
                     WhatsApp Customer Notification
                   </h2>
                 </div>
-                <span className="text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
-                  One-Click Customer Alert
+                <span className="text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-300">
+                  Universal WhatsApp Format
                 </span>
               </div>
 
@@ -379,24 +400,24 @@ export default function AdminOrderDetail({ params }: { params?: Promise<{ id: st
               </p>
 
               {/* Pre-formatted Message Preview */}
-              <div className="bg-white p-3 rounded border border-emerald-200 text-xs text-gray-800 font-mono whitespace-pre-wrap mb-4 max-h-40 overflow-y-auto">
+              <div className="bg-white p-3.5 rounded border border-emerald-200 text-xs text-gray-800 font-mono whitespace-pre-wrap mb-4 max-h-48 overflow-y-auto leading-relaxed shadow-inner">
                 {waMessage}
               </div>
 
               <div className="flex flex-wrap items-center gap-2.5">
                 {formattedPhone ? (
                   <a
-                    href={`https://wa.me/${formattedPhone}?text=${encodeURIComponent(waMessage)}`}
+                    href={`https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(waMessage)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded transition-colors"
+                    className="inline-flex items-center justify-center px-4 py-2.5 bg-[#25D366] hover:bg-[#20ba5a] text-white font-black text-xs uppercase tracking-wider rounded shadow transition-all hover:scale-[1.02]"
                   >
-                    <MessageCircle className="w-4 h-4 mr-1.5" />
+                    <WhatsAppIcon className="w-4 h-4 mr-2" fill="white" />
                     Open WhatsApp Chat
                   </a>
                 ) : (
-                  <span className="text-xs text-red-600 font-bold">
-                    No phone number found in order address.
+                  <span className="text-xs text-red-600 font-bold bg-red-50 p-2 rounded border border-red-200">
+                    No phone number found in customer order address.
                   </span>
                 )}
 
@@ -404,15 +425,15 @@ export default function AdminOrderDetail({ params }: { params?: Promise<{ id: st
                   variant="outline"
                   size="sm"
                   onClick={handleCopyWAMessage}
-                  className="h-9 text-xs font-bold uppercase border-emerald-300 text-emerald-900 hover:bg-emerald-100"
+                  className="h-10 text-xs font-bold uppercase border-emerald-300 text-emerald-900 hover:bg-emerald-100"
                 >
                   {copiedMsg ? (
                     <>
-                      <Check className="w-3.5 h-3.5 mr-1 text-green-700" /> Copied!
+                      <Check className="w-3.5 h-3.5 mr-1.5 text-green-700" /> Message Copied!
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3.5 h-3.5 mr-1" /> Copy Message
+                      <Copy className="w-3.5 h-3.5 mr-1.5" /> Copy Message Text
                     </>
                   )}
                 </Button>
